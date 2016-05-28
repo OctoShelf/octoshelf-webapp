@@ -4,3 +4,7 @@
 
 html {background: #FFFCEF}
 html, body, main {height: 100%;padding: 0;margin: 0}
+
+.prListItem {}
+.prMoreInfo {display: none}
+.prListItem:hover .prMoreInfo {display: inline}
