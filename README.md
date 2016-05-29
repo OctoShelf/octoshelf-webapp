@@ -21,7 +21,6 @@ free to open a new issue, or better yet, open a new pull request yourself! :)
 
 ## TODO
 
-- [ ] Add Github Auth (Otherwise RateLimit of 60 :( )
 - [ ] Move Fetching and State-related code to Web Worker.
 - [ ] Persist repositories that have been added.
 - [ ] Massive UI Update Needed

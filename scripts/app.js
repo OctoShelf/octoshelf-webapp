@@ -1,5 +1,6 @@
 
 let repoSection = document.getElementById('repoSection');
+let authStatus = document.getElementById('authStatus');
 let syncAll = document.getElementById('syncAll');
 let addRepoForm = document.getElementById('addRepoForm');
 let addRepoInput = document.getElementById('addRepoInput');
@@ -16,27 +17,61 @@ syncAll.addEventListener('click', function(event) {
   repositories.forEach(repository => getRepoDetails(repository));
 });
 repoSection.addEventListener('click', function(event) {
-  event.preventDefault();
 
   let { action, id } = event.target && event.target.dataset;
 
   // TODO: clean this up so its not a if ladder
   if (action === 'refresh') {
+    event.preventDefault();
     let repository = repositoriesMap.get(id);
     return getRepoDetails(repository);
   }
 });
 
+function getQueryParams(location) {
+  let queryParams = location.search.slice(1).split('&').reduce((memo, paramString) => {
+    let [ name, value ] = paramString.split('=');
+    return (memo[name] = value, memo);
+  }, {});
+  return queryParams;
+}
+
+function updateAccessToken(newAccessToken) {
+  if (!newAccessToken) {
+    return;
+  }
+  setAccessToken(newAccessToken);
+  authStatus.classList.remove('octicon-issue-reopened');
+  authStatus.classList.add('octicon-issue-closed');
+}
+
 // TODO: Add everything below this to a WebWorker
 let repositories = [];
 let repositoriesSet = new Set();
 let repositoriesMap = new Map();
+let apiUrl = 'https://api.github.com';
+let accessToken = '';
 
 let repository = {
   url: '',
   placeholderUpdated: false,
   fetchedDetails: false
 };
+
+/**
+ * Impl note: I'm putting this IIFE here temporarily so that I am not accessing
+ * undeclared variables. It should NOT be pulled into the WebWorker
+ */
+(function init(location) {
+  let queryParams = getQueryParams(location);
+  updateAccessToken(queryParams.code);
+
+})(location);
+
+function setAccessToken(newAccessToken) {
+  accessToken = newAccessToken;
+}
+
 
 /**
  * Given a PR Object (from Github's API), return a slimmer version
@@ -66,31 +101,35 @@ function addRepo(url) {
   return getRepoDetails(newRepository, placeholder);
 }
 
+function fetchGithubApi(url, accessToken) {
+  return fetch(`${url}?accessToken=${accessToken}`);
+}
+
 /**
  * Fetch Details about a Repo (title, etc)
- * @param apiUrl
+ * @param repoUrl
  * @returns {*}
  */
-function fetchRepoDetails(apiUrl) {
-  return fetch(`https://api.github.com/repos/${apiUrl}`)
+function fetchRepoDetails(repoUrl) {
+  return fetchGithubApi(`${apiUrl}/repos/${repoUrl}`, accessToken);
 }
 
 /**
  * Fetch a Repo's Pull Requests
- * @param apiUrl
+ * @param repoUrl
  * @returns {*}
  */
-function fetchRepoPulls(apiUrl) {
-  return fetch(`https://api.github.com/repos/${apiUrl}/pulls`)
+function fetchRepoPulls(repoUrl) {
+  return fetchGithubApi(`${apiUrl}/repos/${repoUrl}/pulls`, accessToken);
 }
 
 /**
  * Fetch a Repo's details and open pull requests
- * @param apiUrl
+ * @param repoUrl
  * @returns {Promise.<T>}
  */
-function fetchRepo(apiUrl){
-  return Promise.all([fetchRepoDetails(apiUrl), fetchRepoPulls(apiUrl)])
+function fetchRepo(repoUrl){
+  return Promise.all([fetchRepoDetails(repoUrl), fetchRepoPulls(repoUrl)])
     .then(([repoDetails, repoPulls]) => {
       return Promise.all([repoDetails.json(), repoPulls.json()])
     });
@@ -101,12 +140,12 @@ function getRepoDetails(repository, placeholder) {
   let { url, fetchedDetails } = repository;
 
   // TODO: Update this to allow for corp github instances
-  let apiUrl = url.replace('https://github.com/', '');
+  let repoUrl = url.replace('https://github.com/', '');
 
   // If we already got the repository details, lets only fetch pull requests
   if (fetchedDetails) {
 
-    return fetchRepoPulls(apiUrl)
+    return fetchRepoPulls(repoUrl)
       .then(repoPulls => repoPulls.json())
       .then(repoPulls => {
         repository.prs = repoPulls.map(simplifyPR);
@@ -116,7 +155,7 @@ function getRepoDetails(repository, placeholder) {
       });
   }
 
-  fetchRepo(apiUrl)
+  fetchRepo(repoUrl)
     .then(([{ id, full_name}, repoPulls]) => {
       repository.id = id;
       repository.name = full_name;
