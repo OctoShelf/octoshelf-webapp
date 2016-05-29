@@ -1,0 +1,22 @@
+{
+  "name": "octoshelf",
+  "version": "0.0.1",
+  "description": "Manage your pull requests and issues with style!",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TheIronDeveloper/octoshelf.git"
+  },
+  "keywords": [
+    "Github",
+    "PullRequest"
+  ],
+  "author": "Tyler Stark <TheIronDeveloper@gmail.com> (http://www.theirondeveloper.com/)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/TheIronDeveloper/octoshelf/issues"
+  },
+  "homepage": "https://github.com/TheIronDeveloper/octoshelf#readme"
+}
