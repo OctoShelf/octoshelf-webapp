@@ -74,11 +74,14 @@ a{ color: #fff}
     content: ' ';
     display: block;
     background: #333;
+    box-shadow: 3px 0px 2px #ccc;
     width: 5px;
     margin: 0 auto;
-    height: 150px;
+    height: 100px;
     position: absolute;
-    left: 50%;
+    left: 0;
+    right: 0;
+    bottom: -101px;
     z-index: -2;
 }
 
@@ -96,7 +99,7 @@ a{ color: #fff}
     margin: 5px;
 }
 
-@media (max-width: 700px) {
+@media (max-width: 600px) {
     .app {padding: 0.5rem;}
     .bubble {
         position: static;
