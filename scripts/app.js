@@ -1,6 +1,7 @@
 
 let repoSection = document.getElementById('repoSection');
 let authStatus = document.getElementById('authStatus');
+let authToken = document.getElementById('auth_token');
 let syncAll = document.getElementById('syncAll');
 let addRepoForm = document.getElementById('addRepoForm');
 let addRepoInput = document.getElementById('addRepoInput');
@@ -27,14 +28,6 @@ repoSection.addEventListener('click', function(event) {
     return getRepoDetails(repository);
   }
 });
-
-function getQueryParams(location) {
-  let queryParams = location.search.slice(1).split('&').reduce((memo, paramString) => {
-    let [ name, value ] = paramString.split('=');
-    return (memo[name] = value, memo);
-  }, {});
-  return queryParams;
-}
 
 function updateAccessToken(newAccessToken) {
   if (!newAccessToken) {
@@ -63,15 +56,12 @@ let repository = {
  * undeclared variables. It should NOT be pulled into the WebWorker
  */
 (function init(location) {
-  let queryParams = getQueryParams(location);
-  updateAccessToken(queryParams.code);
-
+  updateAccessToken(authToken.value);
 })(location);
 
 function setAccessToken(newAccessToken) {
   accessToken = newAccessToken;
 }
-
 
 /**
  * Given a PR Object (from Github's API), return a slimmer version
