@@ -2,9 +2,12 @@
     box-sizing: border-box;
 }
 
-html {background: #FFFCEF}
+html {background: #EFFEFF}
 html, body, main {height: 100%;padding: 0;margin: 0}
+h1 {margin: 0}
+a{ color: #fff}
 
+.app {font-family: "Helvetica Neue Light", "HelveticaNeue-Light", "Helvetica Neue", Calibri, Helvetica, Arial;}
 .prList {margin: 0;padding: 0}
 .prListItem {
     background: #000;
@@ -30,3 +33,51 @@ html, body, main {height: 100%;padding: 0;margin: 0}
     width: 200px;
 }
 .prListItem:hover .prMoreInfo {display: inline}
+.repo-title {display: inline-block;text-overflow: ellipsis;width: 150px;overflow: hidden}
+
+/* Magical overrides */
+.prList.lotsOfPRs .prListItem {height: 15px;width: 15px;margin: 1px;}
+.prList.lotsOfPRs .prLink {font-size: 0.5em;padding:0;top: -3px}
+
+.app {
+    width: 100%;
+    position: relative;
+}
+.app-prompt,
+.app-repositories{text-align: center}
+.bubble {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    transition: all .5s ease;
+
+    position: absolute;
+    top: 0;
+    left: 0;
+
+    background: #333;
+    border: 1px solid #000;
+    border-radius: 50%;
+    color: #fff;
+    overflow: hidden;
+    height: 150px;
+    width: 150px;
+}
+.repository {transform: rotate(0deg) translateY(-250px);}
+
+@media (max-width: 700px) {
+    .app {padding: 0.5rem;}
+    .bubble {
+        position: static;
+        transform: none !important;
+        width: 100%;
+        text-align: left;
+        border: 0;
+        height: unset;
+        margin-bottom: 1rem;
+        border-radius: 0;
+        padding: 1rem;
+    }
+    .bubble .articleInner {transform: none !important;}
+}

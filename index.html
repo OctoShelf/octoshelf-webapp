@@ -1,23 +1,30 @@
 <!DOCTYPE html>
 <html>
 <link>
-    <title>Octo Shelf</title>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>OctoShelf</title>
     <link rel="stylesheet" type="text/css" href="./styles/octicons.css"></link>
     <link rel="stylesheet" type="text/css" href="./styles/style.css"></link>
 </head>
 <body>
-    <main id="app">
-        <section id="addSection">
-            <form id="addRepoForm">
+    <main id="app" class="app">
+        <section id="addSection" class="app-prompt">
+            <form id="addRepoForm" class="bubble">
+                <h1>OctoShelf</h1>
                 <input type="text" id="addRepoInput" placeholder="Add Repo" />
-                <input type="hidden" id="auth_token" value="defined_serverside" />
-                <a href="#" id="syncAll" class="octicon octicon-sync"></a>
+                <div>
+                    <a href="#" id="syncAll" class="octicon octicon-sync"></a>
+                    <a href="#" id="authStatus" class="octicon octicon-issue-reopened"></a>
+                </div>
             </form>
-            <!-- TODO: Update link to private Git repo's url -->
-            <a href="https://github.com/login/oauth/authorize?client_id=15b29e5a445c7c8563fe" id="authStatus" class="mega-octicon octicon-issue-reopened"></a>
         </section>
-        <section id="repoSection"></section>
+        <section id="repoSection" class="app-repositories"></section>
     </main>
+    <input type="hidden" id="github_oathUrl" value="defined_serverside" />
+    <input type="hidden" id="github_authToken" value="defined_serverside" />
+    <input type="hidden" id="github_clientId" value="defined_serverside" />
     <script src="./scripts/app.js"></script>
 </body>
 </html>
