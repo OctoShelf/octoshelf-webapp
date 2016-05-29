@@ -1,5 +1,6 @@
 
 let repoSection = document.getElementById('repoSection');
+let syncAll = document.getElementById('syncAll');
 let addRepoForm = document.getElementById('addRepoForm');
 let addRepoInput = document.getElementById('addRepoInput');
 
@@ -10,7 +11,10 @@ addRepoForm.addEventListener('submit', function(event) {
   addRepo(addRepoInput.value);
   addRepoInput.value = '';
 });
-
+syncAll.addEventListener('click', function(event) {
+  event.preventDefault();
+  // TODO: Implement Me!
+});
 
 // TODO: Add everything below this to a WebWorker
 let repositories = [];
@@ -91,9 +95,9 @@ function getRepoDetails(repository) {
   let apiUrl = url.replace('https://github.com/', '');
 
   fetchRepo(apiUrl)
-    .then(([{ id, name}, repoPulls]) => {
+    .then(([{ id, full_name}, repoPulls]) => {
       repository.id = id;
-      repository.name = name;
+      repository.name = full_name;
       repository.prs = repoPulls.map(simplifyPR);
       repository.fetchedDetails = true;
     })
@@ -114,26 +118,28 @@ function drawEverything () {
     article.setAttribute('id', id);
 
     let prSection = document.createElement('ul');
+    prSection.setAttribute('class', 'prList');
+
     prs.forEach(({ id, title, body, url }) => {
 
       let prListItem = document.createElement('li');
       let prLink = document.createElement('a');
       let prMoreInfo = document.createElement('span');
 
+
       prListItem.setAttribute('id', id);
+
       prLink.setAttribute('href', url);
+      prLink.setAttribute('class', 'prLink octicon octicon-git-pull-request');
       prLink.setAttribute('title', title);
-      prMoreInfo.appendChild(document.createTextNode(title));
 
       prListItem.classList.add('prListItem');
       prMoreInfo.classList.add('prMoreInfo');
 
-      prSection
-        .appendChild(prListItem)
+      prSection.appendChild(prListItem)
         .appendChild(prLink)
-        .appendChild(document.createTextNode('PR'));
-
-      prListItem.appendChild(prMoreInfo);
+        .appendChild(prMoreInfo)
+        .appendChild(document.createTextNode(title));
     });
 
 
