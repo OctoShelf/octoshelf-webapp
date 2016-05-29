@@ -26,6 +26,9 @@ free to open a new issue, or better yet, open a new pull request yourself! :)
 - [ ] Unit Tests
 - [ ] Linting
 - [ ] Add a refresh interval
+- [ ] Add ability to remove nodes
+- [ ] Access_Token on server side
+- [ ] Allow nodes to grow and expand given enough screen size
 
 ## Potential Future Features
 

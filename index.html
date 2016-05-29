@@ -13,7 +13,7 @@
         <section id="addSection" class="app-prompt">
             <form id="addRepoForm" class="bubble">
                 <h1>OctoShelf</h1>
-                <input type="text" id="addRepoInput" placeholder="Add Repo" />
+                <input type="text" id="addRepoInput" class="addRepoInput" placeholder="Add Repo" />
                 <div>
                     <a href="#" id="syncAll" class="octicon octicon-sync"></a>
                     <a href="#" id="authStatus" class="octicon octicon-issue-reopened"></a>
@@ -21,6 +21,7 @@
             </form>
         </section>
         <section id="repoSection" class="app-repositories"></section>
+        <section id="notifications" class="notifications"></section>
     </main>
     <input type="hidden" id="github_oathUrl" value="defined_serverside" />
     <input type="hidden" id="github_authToken" value="defined_serverside" />

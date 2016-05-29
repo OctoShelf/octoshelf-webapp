@@ -4,6 +4,7 @@ let authStatus = document.getElementById('authStatus');
 let syncAll = document.getElementById('syncAll');
 let addRepoForm = document.getElementById('addRepoForm');
 let addRepoInput = document.getElementById('addRepoInput');
+let notifications = document.getElementById('notifications');
 
 let authToken = document.getElementById('github_authToken').value;
 let oathUrl = document.getElementById('github_oathUrl').value;
@@ -173,6 +174,10 @@ function getRepoDetails(repository, placeholder) {
       .then(repoPulls => {
         repository.prs = repoPulls.map(simplifyPR);
       })
+      .catch(()=> {
+        repoSection.removeChild(placeholder);
+        notify('Invalid Url');
+      })
       .then(() => {
         updateRepository(repository, placeholder);
       })
@@ -188,6 +193,10 @@ function getRepoDetails(repository, placeholder) {
       repository.fetchedDetails = true;
 
       repositoriesMap.set(''+id, repository);
+    })
+    .catch(()=> {
+      repoSection.removeChild(placeholder);
+      notify('Invalid Url');
     })
     .then(() => {
       updateRepository(repository, placeholder);
@@ -208,8 +217,8 @@ function drawPlaceholderRepo({ url }) {
   let article = document.createElement('article');
   article.setAttribute('class', 'bubble repository');
 
-  let articleInner = document.createElement('div');
-  articleInner.setAttribute('class', 'articleInner');
+  let repositoryInner = document.createElement('div');
+  repositoryInner.setAttribute('class', 'repositoryInner');
 
   let header = document.createElement('header');
   let title = document.createElement('span');
@@ -226,18 +235,18 @@ function drawPlaceholderRepo({ url }) {
 
   if (lastRepo) {
     article.style.cssText = lastRepo.getAttribute('style');
-    articleInner.style.cssText = lastRepo.firstElementChild.getAttribute('style');
+    repositoryInner.style.cssText = lastRepo.firstElementChild.getAttribute('style');
   }
 
   repoSection
     .appendChild(article)
-    .appendChild(articleInner)
+    .appendChild(repositoryInner)
     .appendChild(header)
     .appendChild(title)
     .appendChild(document.createTextNode(url));
 
-  articleInner.appendChild(prListItems);
-  articleInner.appendChild(sync);
+  repositoryInner.appendChild(prListItems);
+  repositoryInner.appendChild(sync);
 
   return article;
 }
@@ -318,4 +327,17 @@ function updateRotations() {
     current++;
     child = child.nextElementSibling;
   }
+}
+
+function notify(notifyText) {
+  let notification = document.createElement('div');
+  notification.setAttribute('class', 'notification');
+
+  notifications
+    .appendChild(notification)
+    .appendChild(document.createTextNode(notifyText));
+
+  setTimeout(function() {
+    notifications.removeChild(notification);
+  }, 2000);
 }
