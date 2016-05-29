@@ -10,14 +10,14 @@ html, body, main {height: 100%;padding: 0;margin: 0}
     background: #000;
     border-radius: 50%;
     display: inline-block;
-    padding: 5px;
     margin: 5px;
     text-align: center;
 
     height: 27px;
     width: 27px;
 }
-.prLink {color: #fff;position: relative}
+.prLink {color: #0f0;padding: 5px;position: relative}
+.prLink:visited {color: #c0c}
 .prMoreInfo {
     background: rgba(0,0,0,0.5);
     color: #efefef;

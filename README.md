@@ -32,4 +32,5 @@ free to open a new issue, or better yet, open a new pull request yourself! :)
 
 ## Potential Future Features
 
-- [ ] Server-side page that persists repos
+- [ ] Server-side pages that persists saved repos
+- [ ] Progressive Web App?

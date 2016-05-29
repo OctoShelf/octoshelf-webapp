@@ -22,6 +22,7 @@ let repositoriesSet = new Set();
 
 let repository = {
   url: '',
+  placeholderUpdated: false,
   fetchedDetails: false
 };
 
@@ -49,8 +50,8 @@ function addRepo(url) {
   repositories.push(newRepository);
   repositoriesSet.add(url);
 
-  drawEverything();
-  return getRepoDetails(newRepository);
+  let placeholder = drawPlaceholderRepo(newRepository);
+  return getRepoDetails(newRepository, placeholder);
 }
 
 /**
@@ -83,16 +84,24 @@ function fetchRepo(apiUrl){
     });
 }
 
-function getRepoDetails(repository) {
+function getRepoDetails(repository, placeholder) {
 
   let { url, fetchedDetails } = repository;
 
-  if (fetchedDetails) {
-    return drawEverything();
-  }
-
   // TODO: Update this to allow for corp github instances
   let apiUrl = url.replace('https://github.com/', '');
+
+  // If we already got the repository details, lets only fetch pull requests
+  if (fetchedDetails) {
+
+    return fetchRepo(apiUrl)
+      .then(repoPulls => {
+        repository.prs = repoPulls.map(simplifyPR);
+      })
+      .then(() => {
+        updateRepository(repository, placeholder);
+      });
+  }
 
   fetchRepo(apiUrl)
     .then(([{ id, full_name}, repoPulls]) => {
@@ -101,53 +110,86 @@ function getRepoDetails(repository) {
       repository.prs = repoPulls.map(simplifyPR);
       repository.fetchedDetails = true;
     })
-    .then(drawEverything);
+    .then(() => {
+      updateRepository(repository, placeholder);
+    });
 
 }
 
+/**
+ * Draw a simple placeholder repo into the repoSection.
+ * Later we will fill up the drawn element with more data.
+ * @param url {String}
+ * @returns {Element}
+ */
+function drawPlaceholderRepo({ url }) {
 
-function drawEverything () {
+  let article = document.createElement('article');
+  let header = document.createElement('header');
 
-  let fragment = document.createDocumentFragment();
+  let prListItems = document.createElement('ul');
+  prListItems.setAttribute('class', 'prList');
 
-  repositories.forEach(function({ id, name, url, prs }) {
+  repoSection
+    .appendChild(article)
+    .appendChild(header)
+    .appendChild(document.createTextNode(url));
 
-    let article = document.createElement('article');
-    let header = document.createTextNode(name || url);
+  repoSection
+    .appendChild(article)
+    .appendChild(prListItems);
 
-    article.setAttribute('id', id);
+  return article;
+}
 
-    let prSection = document.createElement('ul');
-    prSection.setAttribute('class', 'prList');
+function updateRepository(repository, placeholder) {
 
-    prs.forEach(({ id, title, body, url }) => {
+  let { id, name, placeholderUpdated, prs } = repository;
+  let article = document.getElementById(id) || placeholder;
 
-      let prListItem = document.createElement('li');
-      let prLink = document.createElement('a');
-      let prMoreInfo = document.createElement('span');
+  if (!article) {
+    article = drawPlaceholderRepo(repository)
+  }
+
+  // If we have not had the opportunity to the DOM earlier, do it now.
+  if (!placeholderUpdated) {
+    // If there wasn't an id before, set it now
+    if (!article.id) {
+      article.setAttribute('id', id);
+    }
+
+    // Swap out the title with a better one
+    let header = article.querySelector('header');
+    header.innerText = name;
+    repository.placeholderUpdated = true;
+  }
+
+  let prListItems = article.querySelector('.prList');
+  let pullRequestFragment = document.createDocumentFragment();
+
+  prs.forEach(({ id, title, url }) => {
+
+    let prListItem = document.createElement('li');
+    let prLink = document.createElement('a');
+    let prMoreInfo = document.createElement('span');
 
 
-      prListItem.setAttribute('id', id);
+    prListItem.setAttribute('id', id);
 
-      prLink.setAttribute('href', url);
-      prLink.setAttribute('class', 'prLink octicon octicon-git-pull-request');
-      prLink.setAttribute('title', title);
+    prLink.setAttribute('href', url);
+    prLink.setAttribute('target', '_blank');
+    prLink.setAttribute('class', 'prLink octicon octicon-git-pull-request');
 
-      prListItem.classList.add('prListItem');
-      prMoreInfo.classList.add('prMoreInfo');
+    prListItem.classList.add('prListItem');
+    prMoreInfo.classList.add('prMoreInfo');
 
-      prSection.appendChild(prListItem)
-        .appendChild(prLink)
-        .appendChild(prMoreInfo)
-        .appendChild(document.createTextNode(title));
-    });
-
-
-    article.appendChild(header);
-    article.appendChild(prSection);
-    fragment.appendChild(article);
+    pullRequestFragment
+      .appendChild(prListItem)
+      .appendChild(prLink)
+      .appendChild(prMoreInfo)
+      .appendChild(document.createTextNode(title));
   });
 
-  repoSection.innerHTML = '';
-  repoSection.appendChild(fragment);
+  prListItems.innerHTML = '';
+  prListItems.appendChild(pullRequestFragment);
 }
