@@ -13,12 +13,24 @@ addRepoForm.addEventListener('submit', function(event) {
 });
 syncAll.addEventListener('click', function(event) {
   event.preventDefault();
-  // TODO: Implement Me!
+  repositories.forEach(repository => getRepoDetails(repository));
+});
+repoSection.addEventListener('click', function(event) {
+  event.preventDefault();
+
+  let { action, id } = event.target && event.target.dataset;
+
+  // TODO: clean this up so its not a if ladder
+  if (action === 'refresh') {
+    let repository = repositoriesMap.get(id);
+    return getRepoDetails(repository);
+  }
 });
 
 // TODO: Add everything below this to a WebWorker
 let repositories = [];
 let repositoriesSet = new Set();
+let repositoriesMap = new Map();
 
 let repository = {
   url: '',
@@ -94,7 +106,8 @@ function getRepoDetails(repository, placeholder) {
   // If we already got the repository details, lets only fetch pull requests
   if (fetchedDetails) {
 
-    return fetchRepo(apiUrl)
+    return fetchRepoPulls(apiUrl)
+      .then(repoPulls => repoPulls.json())
       .then(repoPulls => {
         repository.prs = repoPulls.map(simplifyPR);
       })
@@ -109,11 +122,12 @@ function getRepoDetails(repository, placeholder) {
       repository.name = full_name;
       repository.prs = repoPulls.map(simplifyPR);
       repository.fetchedDetails = true;
+
+      repositoriesMap.set(''+id, repository);
     })
     .then(() => {
       updateRepository(repository, placeholder);
     });
-
 }
 
 /**
@@ -126,6 +140,14 @@ function drawPlaceholderRepo({ url }) {
 
   let article = document.createElement('article');
   let header = document.createElement('header');
+  let title = document.createElement('span');
+  title.setAttribute('class', 'repo-title');
+
+  let sync = document.createElement('a');
+  sync.setAttribute('href', '#');
+  sync.setAttribute('class', 'octicon octicon-sync');
+  sync.setAttribute('data-action', 'refresh');
+  sync.setAttribute('data-id', '');
 
   let prListItems = document.createElement('ul');
   prListItems.setAttribute('class', 'prList');
@@ -133,7 +155,10 @@ function drawPlaceholderRepo({ url }) {
   repoSection
     .appendChild(article)
     .appendChild(header)
+    .appendChild(title)
     .appendChild(document.createTextNode(url));
+
+  header.appendChild(sync);
 
   repoSection
     .appendChild(article)
@@ -158,9 +183,13 @@ function updateRepository(repository, placeholder) {
       article.setAttribute('id', id);
     }
 
+    let sync = article.querySelector('.octicon-sync');
+    sync.setAttribute('data-id', id);
+
     // Swap out the title with a better one
-    let header = article.querySelector('header');
-    header.innerText = name;
+    let repoTitle = article.querySelector('.repo-title');
+    repoTitle.innerText = name;
+
     repository.placeholderUpdated = true;
   }
 
