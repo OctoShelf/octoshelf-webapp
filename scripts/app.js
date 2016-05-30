@@ -1,4 +1,6 @@
 
+let appWorker = new Worker('./scripts/octo.worker.js');
+
 let repoSection = document.getElementById('repoSection');
 let authStatus = document.getElementById('authStatus');
 let syncAll = document.getElementById('syncAll');
@@ -10,40 +12,48 @@ let authToken = document.getElementById('github_authToken').value;
 // let oathUrl = document.getElementById('github_oathUrl').value;
 // let clientId = document.getElementById('github_clientId').value;
 
-let stylesheetHelper = document.createElement("style");
-document.head.appendChild(stylesheetHelper);
+const stylesheetHelper = document.createElement("style");
+const bubbleSize = 150;
+const centerDistance = 250;
+const prResizeThreshold = 8;
 
-// Event Listeners
-let resizeDebounce;
-addRepoForm.addEventListener('submit', function(event) {
-  event.preventDefault();
-  addRepo(addRepoInput.value);
-  addRepoInput.value = '';
-});
-syncAll.addEventListener('click', function(event) {
-  event.preventDefault();
-  // We will be moving things around shortly, so temp ignoring lint error
-  /* eslint no-use-before-define:0 */
-  repositories.forEach(repository => getRepoDetails(repository));
-});
-window.addEventListener('resize', function() {
-  if (resizeDebounce) {
-    clearTimeout(resizeDebounce);
-  }
-
-  resizeDebounce = setTimeout(function(innerHeight, innerWidth) {
-    updateBubbleStyles(innerHeight, innerWidth);
-  }, 60, window.innerHeight, window.innerWidth);
-});
-repoSection.addEventListener('click', function(event) {
-  let {action, id} = event.target && event.target.dataset;
-
-  if (action === 'refresh') {
+/**
+ * Load the App event listeners
+ */
+function loadEventListeners() {
+  let resizeDebounce;
+  addRepoForm.addEventListener('submit', function(event) {
     event.preventDefault();
-    let repository = repositoriesMap.get(id);
-    return getRepoDetails(repository);
-  }
-});
+    parsedPostMessage('addRepo', addRepoInput.value);
+    addRepoInput.value = '';
+  });
+  syncAll.addEventListener('click', function(event) {
+    event.preventDefault();
+    parsedPostMessage('getAllRepoDetails');
+  });
+  window.addEventListener('resize', function() {
+    if (resizeDebounce) {
+      clearTimeout(resizeDebounce);
+    }
+
+    resizeDebounce = setTimeout(function(innerHeight, innerWidth) {
+      updateBubbleStyles(innerHeight, innerWidth);
+    }, 60, window.innerHeight, window.innerWidth);
+  });
+  repoSection.addEventListener('click', function(event) {
+    let {action, id} = event.target && event.target.dataset;
+    let actionMap = {
+      refresh: () => {
+        event.preventDefault();
+        parsedPostMessage('getRepoDetailsById', id);
+      }
+    };
+
+    if (actionMap[action]) {
+      actionMap[action]();
+    }
+  });
+}
 
 /**
  * Update the access token (and UI)
@@ -53,26 +63,10 @@ function updateAccessToken(newAccessToken) {
   if (!newAccessToken) {
     return;
   }
-  setAccessToken(newAccessToken);
+  parsedPostMessage('setAccessToken', newAccessToken);
   authStatus.classList.remove('octicon-issue-reopened');
   authStatus.classList.add('octicon-issue-closed');
 }
-
-const repositories = [];
-const repositoriesSet = new Set();
-const repositoriesMap = new Map();
-const apiUrl = 'https://api.github.com';
-const githubUrl = 'https://github.com/';
-const bubbleSize = 150;
-const centerDistance = 250;
-const prResizeThreshold = 8;
-let accessToken = '';
-
-let repository = {
-  url: '',
-  placeholderUpdated: false,
-  fetchedDetails: false
-};
 
 /**
  * Update Bubble Styles by injecting new css rules
@@ -95,150 +89,25 @@ function updateBubbleStyles(innerHeight, innerWidth) {
 }
 
 /**
- * Impl note: I'm putting this IIFE here temporarily so that I am not accessing
- * undeclared variables. It should NOT be pulled into the WebWorker
+ * Toggle the loading class (which drops opacity) on repositories
+ * @param {String|Number} id - if of the element we are updating
+ * @param {String} url - url of the element we are updating
+ * @param {Boolean} isLoading - toggle showing loading state or not
  */
-(function init(innerHeight, innerWidth) {
-  updateBubbleStyles(innerHeight, innerWidth);
-  updateAccessToken(authToken.value);
-})(window.innerHeight, window.innerWidth);
+function toggleLoadingRepository([id, url, isLoading]) {
+  let article = document.getElementById(id) ||
+    document.querySelector(`[data-url="${url}"]`);
 
-/**
- * Set the access token for future github api requests
- * @param {String} newAccessToken - new access token from server
- */
-function setAccessToken(newAccessToken) {
-  accessToken = newAccessToken;
-}
-
-/**
- * Given a PR Object (from Github's API), return a slimmer version
- * @param {Object} PullRequest - Pull Request Object from the github api
- * @return {Object} simplePullRequest - smaller, cleaner pull request object
- */
-function simplifyPR({id, title, body, html_url: url}) {
-  return {id, title, body, url};
-}
-
-/**
- * Add a Repo to our repos array
- * @param {String} url - Url of the repo we are adding
- * @return {Promise} repoDetails - repo's details and open prs
- */
-function addRepo(url) {
-  if (repositoriesSet.has(url)) {
-    notify('That repo was already added');
+  if (!article) {
+    notify('Something went wrong');
     return;
   }
 
-  let newRepository = Object.assign({}, repository, {
-    prs: [],
-    url: url
-  });
-
-  repositories.push(newRepository);
-  repositoriesSet.add(url);
-
-  let placeholder = drawPlaceholderRepo(newRepository);
-  return getRepoDetails(newRepository, placeholder);
-}
-
-/**
- * Fetch from the Github API.
- * The access_token is important because it increases the rate limit.
- * @param {String} url - url we are fetching from
- * @param {String} accessToken - token we are passing to Github
- * @return {Promise} GithubApiResponse - response given back by github
- */
-function fetchGithubApi(url, accessToken) {
-  if (!accessToken) {
-    return fetch(`${url}`);
-  }
-
-  return fetch(`${url}?access_token=${accessToken}`);
-}
-
-/**
- * Fetch Details about a Repo (title, etc)
- * @param {String} repoUrl - repo url
- * @return {Promise} response - Repo details
- */
-function fetchRepoDetails(repoUrl) {
-  return fetchGithubApi(`${apiUrl}/repos/${repoUrl}`, accessToken);
-}
-
-/**
- * Fetch a Repo's Pull Requests
- * @param {String} repoUrl - repo url
- * @return {Promise} response - Pull Request and their details
- */
-function fetchRepoPulls(repoUrl) {
-  return fetchGithubApi(`${apiUrl}/repos/${repoUrl}/pulls`, accessToken);
-}
-
-/**
- * Fetch a Repo's details and open pull requests
- * @param {String} repoUrl - Repo Url
- * @return {Promise.<T>} [repoDetails, repoPullRequests]
- */
-function fetchRepo(repoUrl) {
-  return Promise.all([fetchRepoDetails(repoUrl), fetchRepoPulls(repoUrl)])
-    .then(([repoDetails, repoPulls]) => {
-      return Promise.all([repoDetails.json(), repoPulls.json()]);
-    });
-}
-
-/**
- * Get Details about a repository
- * @param {Object} repository - repo
- * @param {Element} placeholder - temp element
- * @return {Promise.<T>} RepoDetails - repo details
- */
-function getRepoDetails(repository, placeholder) {
-  let {id, url, fetchedDetails} = repository;
-  let repoUrl = url.replace(githubUrl, '');
-
-  // If we already got the repository details, lets only fetch pull requests
-  if (fetchedDetails) {
-    let article = document.getElementById(id);
+  if (isLoading) {
     article.classList.add('loading');
-
-    return fetchRepoPulls(repoUrl)
-      .then(repoPulls => repoPulls.json())
-      .then(repoPulls => {
-        repository.prs = repoPulls.map(simplifyPR);
-      })
-      .catch(() => {
-        repoSection.removeChild(placeholder);
-        repositoriesSet.delete(url);
-        notify('Invalid Url');
-      })
-      .then(() => {
-        updateRepository(repository, placeholder);
-      })
-      .then(updateRotations);
+    return;
   }
-
-  fetchRepo(repoUrl)
-    .then(([{id, name, full_name}, repoPulls]) => {
-      /* eslint camelcase:0 */
-      repository.id = id;
-      repository.name = name;
-      repository.fullName = full_name;
-      repository.prs = repoPulls.map(simplifyPR);
-      repository.fetchedDetails = true;
-
-      repositoriesMap.set(String(id), repository);
-    })
-    .catch(() => {
-      repoSection.removeChild(placeholder);
-      repositoriesSet.delete(url);
-      notify('Invalid Url');
-    })
-    .then(() => {
-      updateRepository(repository, placeholder);
-    })
-    .then(updateRotations);
+  article.classList.remove('loading');
 }
 
 /**
@@ -252,6 +121,7 @@ function drawPlaceholderRepo({url}) {
 
   let article = document.createElement('article');
   article.setAttribute('class', 'bubble repository loading');
+  article.setAttribute('data-url', url);
 
   let repositoryInner = document.createElement('div');
   repositoryInner.setAttribute('class', 'repositoryInner');
@@ -285,6 +155,9 @@ function drawPlaceholderRepo({url}) {
   header.appendChild(sync);
   repositoryInner.appendChild(prListItems);
 
+  // Now that we've added a placeholder, lets spin to win!
+  updateRotations();
+
   return article;
 }
 
@@ -293,9 +166,10 @@ function drawPlaceholderRepo({url}) {
  * @param {Object} repository - Repository Details
  * @param {Element} placeholder - Placeholder Element
  */
-function updateRepository(repository, placeholder) {
-  let {id, name, fullName, placeholderUpdated, prs} = repository;
-  let article = document.getElementById(id) || placeholder;
+function updateRepository(repository) {
+  let {id, name, url, fullName, placeholderUpdated, prs} = repository;
+  let article = document.getElementById(id) ||
+    document.querySelector(`[data-url="${url}"]`);
 
   if (!article) {
     article = drawPlaceholderRepo(repository);
@@ -356,6 +230,19 @@ function updateRepository(repository, placeholder) {
 }
 
 /**
+ * Remove a repository from the DOM
+ * @param {String} url - repositories have a data-url="" to target from
+ */
+function removeRepository(url) {
+  let article = document.querySelector(`[data-url="${url}"]`);
+  if (!article) {
+    notify('Something went wrong');
+    return;
+  }
+  article.parentNode.removeChild(article);
+}
+
+/**
  * Update the rotation of the different repo bubbles
  */
 function updateRotations() {
@@ -395,3 +282,69 @@ function notify(notifyText) {
     }, 500);
   }, 1000);
 }
+
+/**
+ * Unwrap PostMessages
+ * @param {Function} fn - function to call
+ * @param {String} params - Stringified object that contains a postData prop
+ */
+function unwrapPostMessage(fn, params) {
+  let parsedParams = JSON.parse(params);
+  fn(parsedParams.postData);
+}
+
+/**
+ * Send a Parsed Post Message
+ * @param {String} messageType - function we will attempt to call
+ * @param {*} postData - Some data that we will wrap into a stringified object
+ */
+function parsedPostMessage(messageType, postData) {
+  appWorker.postMessage([messageType, JSON.stringify({postData})]);
+}
+
+/**
+ * Log a message to console (if console exists)
+ * @param {String} message - message to log (or group)
+ * @param {String|Object} extraStuff - extra stuff to log inside message group
+ */
+function log(message, extraStuff) {
+  if (console && console.log) {
+    if (extraStuff && console.group) {
+      console.group(message);
+      console.log(extraStuff);
+      console.groupEnd(message);
+      return;
+    }
+    console.log(message, extraStuff);
+  }
+}
+
+/**
+ * Contract: appWorker.postMessage([msgType, msgData]);
+ * @type {Worker}
+ */
+appWorker.addEventListener('message', function({data: [msgType, msgData]}) {
+  let msgTypes = {
+    notify,
+    drawPlaceholderRepo,
+    updateRepository,
+    removeRepository,
+    toggleLoadingRepository
+  };
+
+  if (msgTypes[msgType]) {
+    log(`"${msgType}" called: `, msgData);
+    return unwrapPostMessage(msgTypes[msgType], msgData);
+  }
+  log(`"${msgType}" was not part of the allowed postMessage functions`);
+});
+
+/**
+ * Initialize the app!
+ */
+(function init(innerHeight, innerWidth) {
+  document.head.appendChild(stylesheetHelper);
+  updateBubbleStyles(innerHeight, innerWidth);
+  updateAccessToken(authToken.value);
+  loadEventListeners();
+})(window.innerHeight, window.innerWidth);

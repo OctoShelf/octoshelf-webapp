@@ -1,0 +1,236 @@
+/**
+ * Octo Worker
+ * All xhr fetching and state management happens here. If you need to make an
+ * update to the repository array, then you would do it here by calling a
+ * parsedPostMessage from app.js.
+ *
+ * If you need to make a DOM update (state has changed somehow), then you would
+ * call `parsedPostMessage()`
+ */
+
+const repositories = [];
+const repositoriesSet = new Set();
+const repositoriesMap = new Map();
+const apiUrl = 'https://api.github.com';
+const githubUrl = 'https://github.com/';
+let accessToken = '';
+
+const repository = {
+  url: '',
+  placeholderUpdated: false,
+  fetchedDetails: false
+};
+
+/**
+ * Set the access token for future github api requests
+ * @param {String} newAccessToken - new access token from server
+ */
+function setAccessToken(newAccessToken) {
+  accessToken = newAccessToken;
+}
+
+/**
+ * Given a PR Object (from Github's API), return a slimmer version
+ * @param {Object} PullRequest - Pull Request Object from the github api
+ * @return {Object} simplePullRequest - smaller, cleaner pull request object
+ */
+function simplifyPR({id, title, html_url: url}) {
+  return {id, title, url};
+}
+
+/**
+ * Add a Repo to our repos array
+ * @param {String} url - Url of the repo we are adding
+ * @return {Promise} repoDetails - repo's details and open prs
+ */
+function addRepo(url) {
+  if (repositoriesSet.has(url)) {
+    parsedPostMessage('notify', 'That repo was already added');
+    return;
+  }
+
+  let newRepository = Object.assign({}, repository, {
+    prs: [],
+    url: url
+  });
+
+  repositories.push(newRepository);
+  repositoriesSet.add(url);
+
+  parsedPostMessage('drawPlaceholderRepo', newRepository);
+  return getRepoDetails(newRepository);
+}
+
+/**
+ * Fetch from the Github API.
+ * The access_token is important because it increases the rate limit.
+ * @param {String} url - url we are fetching from
+ * @param {String} accessToken - token we are passing to Github
+ * @return {Promise} GithubApiResponse - response given back by github
+ */
+function fetchGithubApi(url, accessToken) {
+  if (!accessToken) {
+    return fetch(`${url}`);
+  }
+
+  return fetch(`${url}?access_token=${accessToken}`);
+}
+
+/**
+ * Fetch Details about a Repo (title, etc)
+ * @param {String} repoUrl - repo url
+ * @return {Promise} response - Repo details
+ */
+function fetchRepoDetails(repoUrl) {
+  return fetchGithubApi(`${apiUrl}/repos/${repoUrl}`, accessToken);
+}
+
+/**
+ * Fetch a Repo's Pull Requests
+ * @param {String} repoUrl - repo url
+ * @return {Promise} response - Pull Request and their details
+ */
+function fetchRepoPulls(repoUrl) {
+  return fetchGithubApi(`${apiUrl}/repos/${repoUrl}/pulls`, accessToken);
+}
+
+/**
+ * Fetch a Repo's details and open pull requests
+ * @param {String} repoUrl - Repo Url
+ * @return {Promise.<T>} [repoDetails, repoPullRequests]
+ */
+function fetchRepo(repoUrl) {
+  return Promise.all([fetchRepoDetails(repoUrl), fetchRepoPulls(repoUrl)])
+    .then(([repoDetails, repoPulls]) => {
+      return Promise.all([repoDetails.json(), repoPulls.json()]);
+    });
+}
+
+/**
+ * Get Details about a repository
+ * @param {Object} repository - repo
+ * @param {Element} placeholder - temp element
+ * @return {Promise.<T>} RepoDetails - repo details
+ */
+function getRepoDetails(repository) {
+  let {id, url, fetchedDetails} = repository;
+  let repoUrl = url.replace(githubUrl, '');
+  let repoStillOnDom = true;
+
+  // If we already got the repository details, lets only fetch pull requests
+  if (fetchedDetails) {
+    parsedPostMessage('toggleLoadingRepository', [id, url, true]);
+    return fetchRepoPulls(repoUrl)
+      .then(repoPulls => repoPulls.json())
+      .then(repoPulls => {
+        repository.prs = repoPulls.map(simplifyPR);
+      })
+      .catch(() => {
+        repositoriesSet.delete(url);
+        parsedPostMessage('removeRepository', url);
+        parsedPostMessage('notify', 'Invalid Url');
+        repoStillOnDom = false;
+      })
+      .then(() => {
+        if (repoStillOnDom) {
+          parsedPostMessage('toggleLoadingRepository', [id, url, false]);
+          parsedPostMessage('updateRepository', repository);
+        }
+      });
+  }
+
+  fetchRepo(repoUrl)
+    .then(([{id, name, full_name}, repoPulls]) => {
+      /* eslint camelcase:0 */
+      repository.id = id;
+      repository.name = name;
+      repository.fullName = full_name;
+      repository.prs = repoPulls.map(simplifyPR);
+      repository.fetchedDetails = true;
+
+      repositoriesMap.set(String(id), repository);
+    })
+    .catch(() => {
+      repositoriesSet.delete(url);
+      parsedPostMessage('removeRepository', url);
+      parsedPostMessage('notify', 'Invalid Url');
+      repoStillOnDom = false;
+    })
+    .then(() => {
+      if (repoStillOnDom) {
+        parsedPostMessage('toggleLoadingRepository', [id, url, false]);
+        parsedPostMessage('updateRepository', repository);
+      }
+    });
+}
+
+/**
+ * Foreach through all the repos, getting details for each of them
+ * (which in turn updates the DOM with each of them)
+ */
+function getAllRepoDetails() {
+  repositories.forEach(repository => {
+    getRepoDetails(repository);
+  });
+}
+
+/**
+ * Given an id, call the getRepoDetails function
+ * @param {String} id - id of a repo
+ */
+function getRepoDetailsById(id) {
+  let repository = repositoriesMap.get(id);
+  getRepoDetails(repository);
+}
+
+/**
+ * Unwrap PostMessages
+ * @param {Function} fn - function to call
+ * @param {String} params - Stringified object that contains a postData prop
+ */
+function unwrapPostMessage(fn, params) {
+  let parsedParams = JSON.parse(params);
+  fn(parsedParams.postData);
+}
+
+/**
+ * Send a Parsed Post Message
+ * @param {String} messageType - function we will attempt to call
+ * @param {*} postData - Some data that we will wrap into a stringified object
+ */
+function parsedPostMessage(messageType, postData) {
+  self.postMessage([messageType, JSON.stringify({postData})]);
+}
+
+/**
+ * Log a message to console (if console exists)
+ * @param {String} message - message to log (or group)
+ * @param {String|Object} extraStuff - extra stuff to log inside message group
+ */
+function log(message, extraStuff) {
+  if (console && console.log) {
+    if (extraStuff && console.group) {
+      console.group(message);
+      console.log(extraStuff);
+      console.groupEnd(message);
+      return;
+    }
+    console.log(message, extraStuff);
+  }
+}
+
+self.addEventListener('message', function({data: [msgType, msgData]}) {
+  let msgTypes = {
+    getRepoDetails,
+    getAllRepoDetails,
+    getRepoDetailsById,
+    setAccessToken,
+    addRepo
+  };
+
+  if (msgTypes[msgType]) {
+    log(`"${msgType}" called: `, msgData);
+    return unwrapPostMessage(msgTypes[msgType], msgData);
+  }
+  log(`"${msgType}" was not part of the allowed postMessage functions`);
+});

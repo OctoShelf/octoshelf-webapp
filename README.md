@@ -21,10 +21,8 @@ free to open a new issue, or better yet, open a new pull request yourself! :)
 
 ## TODO
 
-- [ ] Move Fetching and State-related code to Web Worker.
 - [ ] Persist repositories that have been added.
 - [ ] Unit Tests
-- [ ] Linting
 - [ ] Add a refresh interval
 - [ ] Add ability to remove nodes
 - [ ] Access_Token on server side
