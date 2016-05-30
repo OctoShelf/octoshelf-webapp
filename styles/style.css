@@ -70,6 +70,7 @@ a{ color: #fff}
     width: 150px;
 }
 .repository {transform: rotate(0deg) translateY(-250px);}
+.repository.loading {opacity: 0.2}
 .repository:after {
     content: ' ';
     display: block;

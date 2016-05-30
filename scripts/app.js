@@ -110,6 +110,7 @@ function simplifyPR({ id, title, body, html_url:url }) {
  */
 function addRepo(url) {
   if (repositoriesSet.has(url)) {
+    notify('That url was already added');
     return;
   }
 
@@ -161,13 +162,16 @@ function fetchRepo(repoUrl){
 
 function getRepoDetails(repository, placeholder) {
 
-  let { url, fetchedDetails } = repository;
+  let { id, url, fetchedDetails } = repository;
 
   // TODO: Update this to allow for corp github instances
   let repoUrl = url.replace('https://github.com/', '');
 
   // If we already got the repository details, lets only fetch pull requests
   if (fetchedDetails) {
+
+    let article = document.getElementById(id);
+    article.classList.add('loading');
 
     return fetchRepoPulls(repoUrl)
       .then(repoPulls => repoPulls.json())
@@ -176,6 +180,7 @@ function getRepoDetails(repository, placeholder) {
       })
       .catch(()=> {
         repoSection.removeChild(placeholder);
+        repositoriesSet.remove(url);
         notify('Invalid Url');
       })
       .then(() => {
@@ -196,6 +201,7 @@ function getRepoDetails(repository, placeholder) {
     })
     .catch(()=> {
       repoSection.removeChild(placeholder);
+      repositoriesSet.remove(url);
       notify('Invalid Url');
     })
     .then(() => {
@@ -215,7 +221,7 @@ function drawPlaceholderRepo({ url }) {
   let lastRepo = repoSection.lastElementChild;
 
   let article = document.createElement('article');
-  article.setAttribute('class', 'bubble repository');
+  article.setAttribute('class', 'bubble repository loading');
 
   let repositoryInner = document.createElement('div');
   repositoryInner.setAttribute('class', 'repositoryInner');
@@ -312,6 +318,8 @@ function updateRepository(repository, placeholder) {
 
   prListItems.innerHTML = '';
   prListItems.appendChild(pullRequestFragment);
+
+  article.classList.remove('loading');
 }
 
 function updateRotations() {
