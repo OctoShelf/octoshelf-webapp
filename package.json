@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "description": "Manage your pull requests and issues with style!",
   "scripts": {
+    "lint": "eslint .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -18,5 +19,9 @@
   "bugs": {
     "url": "https://github.com/TheIronDeveloper/octoshelf/issues"
   },
-  "homepage": "https://github.com/TheIronDeveloper/octoshelf#readme"
+  "homepage": "https://github.com/TheIronDeveloper/octoshelf#readme",
+  "devDependencies": {
+    "eslint": "^2.11.0",
+    "eslint-config-google": "^0.5.0"
+  }
 }

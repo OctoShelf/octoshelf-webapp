@@ -7,8 +7,8 @@ let addRepoInput = document.getElementById('addRepoInput');
 let notifications = document.getElementById('notifications');
 
 let authToken = document.getElementById('github_authToken').value;
-let oathUrl = document.getElementById('github_oathUrl').value;
-let clientId = document.getElementById('github_clientId').value;
+// let oathUrl = document.getElementById('github_oathUrl').value;
+// let clientId = document.getElementById('github_clientId').value;
 
 let stylesheetHelper = document.createElement("style");
 document.head.appendChild(stylesheetHelper);
@@ -16,16 +16,17 @@ document.head.appendChild(stylesheetHelper);
 // Event Listeners
 let resizeDebounce;
 addRepoForm.addEventListener('submit', function(event) {
-
   event.preventDefault();
   addRepo(addRepoInput.value);
   addRepoInput.value = '';
 });
 syncAll.addEventListener('click', function(event) {
   event.preventDefault();
+  // We will be moving things around shortly, so temp ignoring lint error
+  /* eslint no-use-before-define:0 */
   repositories.forEach(repository => getRepoDetails(repository));
 });
-window.addEventListener('resize', function(event) {
+window.addEventListener('resize', function() {
   if (resizeDebounce) {
     clearTimeout(resizeDebounce);
   }
@@ -35,10 +36,8 @@ window.addEventListener('resize', function(event) {
   }, 60, window.innerHeight, window.innerWidth);
 });
 repoSection.addEventListener('click', function(event) {
+  let {action, id} = event.target && event.target.dataset;
 
-  let { action, id } = event.target && event.target.dataset;
-
-  // TODO: clean this up so its not a if ladder
   if (action === 'refresh') {
     event.preventDefault();
     let repository = repositoriesMap.get(id);
@@ -46,6 +45,10 @@ repoSection.addEventListener('click', function(event) {
   }
 });
 
+/**
+ * Update the access token (and UI)
+ * @param {String} newAccessToken - new access token
+ */
 function updateAccessToken(newAccessToken) {
   if (!newAccessToken) {
     return;
@@ -55,30 +58,15 @@ function updateAccessToken(newAccessToken) {
   authStatus.classList.add('octicon-issue-closed');
 }
 
-function updateBubbleStyles(innerHeight, innerWidth) {
-
-  let bubbleModify = bubbleSize / 2;
-  let top = (innerHeight / 2) - bubbleModify;
-  let left = (innerWidth / 2) - bubbleModify;
-
-  while (stylesheetHelper.sheet.rules.length) {
-    stylesheetHelper.sheet.removeRule(0);
-  }
-
-  stylesheetHelper.sheet.insertRule(`.bubble { top: ${top}px; left: ${left}px;height: ${bubbleSize}px; width: ${bubbleSize}px`, 0);
-  stylesheetHelper.sheet.insertRule(`.repository:after { top: ${bubbleSize - 1}px;`, 0);
-}
-
-// TODO: Add everything below this to a WebWorker
 const repositories = [];
 const repositoriesSet = new Set();
 const repositoriesMap = new Map();
 const apiUrl = 'https://api.github.com';
+const githubUrl = 'https://github.com/';
 const bubbleSize = 150;
-const distanceFromCenter = 250;
+const centerDistance = 250;
 const prResizeThreshold = 8;
 let accessToken = '';
-
 
 let repository = {
   url: '',
@@ -87,29 +75,55 @@ let repository = {
 };
 
 /**
+ * Update Bubble Styles by injecting new css rules
+ * @param {Number} innerHeight - height of the window
+ * @param {Number} innerWidth - width of the window
+ */
+function updateBubbleStyles(innerHeight, innerWidth) {
+  let bubbleModify = bubbleSize / 2;
+  let top = (innerHeight / 2) - bubbleModify;
+  let left = (innerWidth / 2) - bubbleModify;
+
+  while (stylesheetHelper.sheet.rules.length) {
+    stylesheetHelper.sheet.removeRule(0);
+  }
+  let size = bubbleSize;
+  let cssRule = `top:${top}px;left:${left}px;height:${size}px;width:${size}px`;
+  let afterRule = `top: ${size - 1}px;`;
+  stylesheetHelper.sheet.insertRule(`.bubble {${cssRule}}`, 0);
+  stylesheetHelper.sheet.insertRule(`.repository:after {${afterRule}}`, 0);
+}
+
+/**
  * Impl note: I'm putting this IIFE here temporarily so that I am not accessing
  * undeclared variables. It should NOT be pulled into the WebWorker
  */
 (function init(innerHeight, innerWidth) {
   updateBubbleStyles(innerHeight, innerWidth);
   updateAccessToken(authToken.value);
-
 })(window.innerHeight, window.innerWidth);
 
+/**
+ * Set the access token for future github api requests
+ * @param {String} newAccessToken - new access token from server
+ */
 function setAccessToken(newAccessToken) {
   accessToken = newAccessToken;
 }
 
 /**
  * Given a PR Object (from Github's API), return a slimmer version
+ * @param {Object} PullRequest - Pull Request Object from the github api
+ * @return {Object} simplePullRequest - smaller, cleaner pull request object
  */
-function simplifyPR({ id, title, body, html_url:url }) {
-  return { id, title, body, url };
+function simplifyPR({id, title, body, html_url: url}) {
+  return {id, title, body, url};
 }
 
 /**
  * Add a Repo to our repos array
- * @param url
+ * @param {String} url - Url of the repo we are adding
+ * @return {Promise} repoDetails - repo's details and open prs
  */
 function addRepo(url) {
   if (repositoriesSet.has(url)) {
@@ -129,14 +143,25 @@ function addRepo(url) {
   return getRepoDetails(newRepository, placeholder);
 }
 
+/**
+ * Fetch from the Github API.
+ * The access_token is important because it increases the rate limit.
+ * @param {String} url - url we are fetching from
+ * @param {String} accessToken - token we are passing to Github
+ * @return {Promise} GithubApiResponse - response given back by github
+ */
 function fetchGithubApi(url, accessToken) {
-  return fetch(`${url}?accessToken=${accessToken}`);
+  if (!accessToken) {
+    return fetch(`${url}`);
+  }
+
+  return fetch(`${url}?access_token=${accessToken}`);
 }
 
 /**
  * Fetch Details about a Repo (title, etc)
- * @param repoUrl
- * @returns {*}
+ * @param {String} repoUrl - repo url
+ * @return {Promise} response - Repo details
  */
 function fetchRepoDetails(repoUrl) {
   return fetchGithubApi(`${apiUrl}/repos/${repoUrl}`, accessToken);
@@ -144,8 +169,8 @@ function fetchRepoDetails(repoUrl) {
 
 /**
  * Fetch a Repo's Pull Requests
- * @param repoUrl
- * @returns {*}
+ * @param {String} repoUrl - repo url
+ * @return {Promise} response - Pull Request and their details
  */
 function fetchRepoPulls(repoUrl) {
   return fetchGithubApi(`${apiUrl}/repos/${repoUrl}/pulls`, accessToken);
@@ -153,26 +178,28 @@ function fetchRepoPulls(repoUrl) {
 
 /**
  * Fetch a Repo's details and open pull requests
- * @param repoUrl
- * @returns {Promise.<T>}
+ * @param {String} repoUrl - Repo Url
+ * @return {Promise.<T>} [repoDetails, repoPullRequests]
  */
-function fetchRepo(repoUrl){
+function fetchRepo(repoUrl) {
   return Promise.all([fetchRepoDetails(repoUrl), fetchRepoPulls(repoUrl)])
     .then(([repoDetails, repoPulls]) => {
-      return Promise.all([repoDetails.json(), repoPulls.json()])
+      return Promise.all([repoDetails.json(), repoPulls.json()]);
     });
 }
 
+/**
+ * Get Details about a repository
+ * @param {Object} repository - repo
+ * @param {Element} placeholder - temp element
+ * @return {Promise.<T>} RepoDetails - repo details
+ */
 function getRepoDetails(repository, placeholder) {
-
-  let { id, url, fetchedDetails } = repository;
-
-  // TODO: Update this to allow for corp github instances
-  let repoUrl = url.replace('https://github.com/', '');
+  let {id, url, fetchedDetails} = repository;
+  let repoUrl = url.replace(githubUrl, '');
 
   // If we already got the repository details, lets only fetch pull requests
   if (fetchedDetails) {
-
     let article = document.getElementById(id);
     article.classList.add('loading');
 
@@ -181,7 +208,7 @@ function getRepoDetails(repository, placeholder) {
       .then(repoPulls => {
         repository.prs = repoPulls.map(simplifyPR);
       })
-      .catch(()=> {
+      .catch(() => {
         repoSection.removeChild(placeholder);
         repositoriesSet.delete(url);
         notify('Invalid Url');
@@ -193,16 +220,17 @@ function getRepoDetails(repository, placeholder) {
   }
 
   fetchRepo(repoUrl)
-    .then(([{ id, name, full_name}, repoPulls]) => {
+    .then(([{id, name, full_name}, repoPulls]) => {
+      /* eslint camelcase:0 */
       repository.id = id;
       repository.name = name;
       repository.fullName = full_name;
       repository.prs = repoPulls.map(simplifyPR);
       repository.fetchedDetails = true;
 
-      repositoriesMap.set(''+id, repository);
+      repositoriesMap.set(String(id), repository);
     })
-    .catch(()=> {
+    .catch(() => {
       repoSection.removeChild(placeholder);
       repositoriesSet.delete(url);
       notify('Invalid Url');
@@ -216,11 +244,10 @@ function getRepoDetails(repository, placeholder) {
 /**
  * Draw a simple placeholder repo into the repoSection.
  * Later we will fill up the drawn element with more data.
- * @param url {String}
- * @returns {Element}
+ * @param {Object} Repo - Repo Object
+ * @return {Element} article - placeholder element
  */
-function drawPlaceholderRepo({ url }) {
-
+function drawPlaceholderRepo({url}) {
   let lastRepo = repoSection.lastElementChild;
 
   let article = document.createElement('article');
@@ -243,8 +270,9 @@ function drawPlaceholderRepo({ url }) {
   prListItems.setAttribute('class', 'prList');
 
   if (lastRepo) {
+    let firstChild = lastRepo.firstElementChild;
     article.style.cssText = lastRepo.getAttribute('style');
-    repositoryInner.style.cssText = lastRepo.firstElementChild.getAttribute('style');
+    repositoryInner.style.cssText = firstChild.getAttribute('style');
   }
 
   repoSection
@@ -260,13 +288,17 @@ function drawPlaceholderRepo({ url }) {
   return article;
 }
 
+/**
+ * Update the repository article element with any changes
+ * @param {Object} repository - Repository Details
+ * @param {Element} placeholder - Placeholder Element
+ */
 function updateRepository(repository, placeholder) {
-
-  let { id, name, fullName, placeholderUpdated, prs } = repository;
+  let {id, name, fullName, placeholderUpdated, prs} = repository;
   let article = document.getElementById(id) || placeholder;
 
   if (!article) {
-    article = drawPlaceholderRepo(repository)
+    article = drawPlaceholderRepo(repository);
   }
 
   // If we have not had the opportunity to the DOM earlier, do it now.
@@ -296,12 +328,10 @@ function updateRepository(repository, placeholder) {
     prListItems.classList.remove('lotsOfPRs');
   }
 
-  prs.forEach(({ id, title, url }) => {
-
+  prs.forEach(({id, title, url}) => {
     let prListItem = document.createElement('li');
     let prLink = document.createElement('a');
     let prMoreInfo = document.createElement('span');
-
 
     prListItem.setAttribute('id', id);
 
@@ -325,21 +355,31 @@ function updateRepository(repository, placeholder) {
   article.classList.remove('loading');
 }
 
+/**
+ * Update the rotation of the different repo bubbles
+ */
 function updateRotations() {
   let count = repoSection.childElementCount;
-  let rotation = 360/count;
+  let rotation = 360 / count;
   let current = 0;
 
   let child = repoSection.firstElementChild;
   while (child) {
-    let rotateBy = current*rotation;
-    child.style.cssText = `transform: rotate(${rotateBy}deg) translateY(-${distanceFromCenter}px);`;
-    child.firstElementChild.style.cssText = `transform: rotate(-${rotateBy}deg);`;
+    let rotateBy = current * rotation;
+    let transform = `rotate(${rotateBy}deg) translateY(-${centerDistance}px)`;
+    let innerTransform = `transform: rotate(-${rotateBy}deg);`;
+
+    child.style.cssText = `transform: ${transform};`;
+    child.firstElementChild.style.cssText = innerTransform;
     current++;
     child = child.nextElementSibling;
   }
 }
 
+/**
+ * Notify the user something happened
+ * @param {String} notifyText - Text we want displayed
+ */
 function notify(notifyText) {
   let notification = document.createElement('div');
   notification.setAttribute('class', 'notification');
