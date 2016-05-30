@@ -31,7 +31,7 @@ window.addEventListener('resize', function(event) {
   }
 
   resizeDebounce = setTimeout(function(innerHeight, innerWidth) {
-    centerBubbles(innerHeight, innerWidth);
+    updateBubbleStyles(innerHeight, innerWidth);
   }, 60, window.innerHeight, window.innerWidth);
 });
 repoSection.addEventListener('click', function(event) {
@@ -55,16 +55,18 @@ function updateAccessToken(newAccessToken) {
   authStatus.classList.add('octicon-issue-closed');
 }
 
-function centerBubbles(innerHeight, innerWidth) {
+function updateBubbleStyles(innerHeight, innerWidth) {
 
   let bubbleModify = bubbleSize / 2;
   let top = (innerHeight / 2) - bubbleModify;
   let left = (innerWidth / 2) - bubbleModify;
 
-  if (stylesheetHelper.sheet.rules.length) {
+  while (stylesheetHelper.sheet.rules.length) {
     stylesheetHelper.sheet.removeRule(0);
   }
-  stylesheetHelper.sheet.insertRule(`.bubble { top: ${top}px; left: ${left}px; }`);
+
+  stylesheetHelper.sheet.insertRule(`.bubble { top: ${top}px; left: ${left}px;height: ${bubbleSize}px; width: ${bubbleSize}px`, 0);
+  stylesheetHelper.sheet.insertRule(`.repository:after { top: ${bubbleSize - 1}px;`, 0);
 }
 
 // TODO: Add everything below this to a WebWorker
@@ -74,6 +76,7 @@ const repositoriesMap = new Map();
 const apiUrl = 'https://api.github.com';
 const bubbleSize = 150;
 const distanceFromCenter = 250;
+const prResizeThreshold = 8;
 let accessToken = '';
 
 
@@ -88,7 +91,7 @@ let repository = {
  * undeclared variables. It should NOT be pulled into the WebWorker
  */
 (function init(innerHeight, innerWidth) {
-  centerBubbles(innerHeight, innerWidth);
+  updateBubbleStyles(innerHeight, innerWidth);
   updateAccessToken(authToken.value);
 
 })(window.innerHeight, window.innerWidth);
@@ -110,7 +113,7 @@ function simplifyPR({ id, title, body, html_url:url }) {
  */
 function addRepo(url) {
   if (repositoriesSet.has(url)) {
-    notify('That url was already added');
+    notify('That repo was already added');
     return;
   }
 
@@ -180,7 +183,7 @@ function getRepoDetails(repository, placeholder) {
       })
       .catch(()=> {
         repoSection.removeChild(placeholder);
-        repositoriesSet.remove(url);
+        repositoriesSet.delete(url);
         notify('Invalid Url');
       })
       .then(() => {
@@ -201,7 +204,7 @@ function getRepoDetails(repository, placeholder) {
     })
     .catch(()=> {
       repoSection.removeChild(placeholder);
-      repositoriesSet.remove(url);
+      repositoriesSet.delete(url);
       notify('Invalid Url');
     })
     .then(() => {
@@ -251,8 +254,8 @@ function drawPlaceholderRepo({ url }) {
     .appendChild(title)
     .appendChild(document.createTextNode(url));
 
+  header.appendChild(sync);
   repositoryInner.appendChild(prListItems);
-  repositoryInner.appendChild(sync);
 
   return article;
 }
@@ -287,7 +290,7 @@ function updateRepository(repository, placeholder) {
   let prListItems = article.querySelector('.prList');
   let pullRequestFragment = document.createDocumentFragment();
 
-  if (prs.length > 10) {
+  if (prs.length > prResizeThreshold) {
     prListItems.classList.add('lotsOfPRs');
   } else {
     prListItems.classList.remove('lotsOfPRs');
@@ -346,6 +349,9 @@ function notify(notifyText) {
     .appendChild(document.createTextNode(notifyText));
 
   setTimeout(function() {
-    notifications.removeChild(notification);
-  }, 2000);
+    notification.classList.add('fadeOut');
+    setTimeout(function() {
+      notifications.removeChild(notification);
+    }, 500);
+  }, 1000);
 }

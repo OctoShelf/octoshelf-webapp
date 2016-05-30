@@ -51,6 +51,7 @@ a{ color: #fff}
 }
 .app-prompt,
 .app-repositories{text-align: center}
+.app-prompt {position: absolute;top: 0;left: 0;z-index: 1}
 .bubble {
     display: flex;
     flex-direction: column;
@@ -66,23 +67,21 @@ a{ color: #fff}
     border: 1px solid #000;
     border-radius: 50%;
     color: #fff;
-    height: 150px;
-    width: 150px;
 }
-.repository {transform: rotate(0deg) translateY(-250px);}
+.repository {transform: rotate(0deg) translateY(-250px);box-shadow: 3px 2px 2px #ccc}
 .repository.loading {opacity: 0.2}
 .repository:after {
     content: ' ';
     display: block;
     background: #333;
-    box-shadow: 3px 0px 2px #ccc;
+    box-shadow: 3px 2px 2px #ccc;
     width: 5px;
-    margin: 0 auto;
-    height: 100px;
+    margin: -1px auto;
+    height: 110px;
     position: absolute;
     left: 0;
     right: 0;
-    bottom: -101px;
+    top: 149px;
     z-index: -2;
 }
 
@@ -98,10 +97,14 @@ a{ color: #fff}
     width: 200px;
     padding: 1rem;
     margin: 5px;
+    transition: all .5s ease;
+    opacity: 1
 }
+.notification.fadeOut {opacity: 0}
 
 @media (max-width: 600px) {
     .app {padding: 0.5rem;}
+    .app-prompt {position: unset}
     .bubble {
         position: static;
         transform: none !important;
