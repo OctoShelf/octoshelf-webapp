@@ -132,7 +132,7 @@ function drawPlaceholderRepo({url}) {
 
   let sync = document.createElement('a');
   sync.setAttribute('href', '#');
-  sync.setAttribute('class', 'octicon octicon-sync');
+  sync.setAttribute('class', 'octicon octicon-sync sync');
   sync.setAttribute('data-action', 'refresh');
   sync.setAttribute('data-id', '');
 
@@ -156,7 +156,8 @@ function drawPlaceholderRepo({url}) {
   repositoryInner.appendChild(prListItems);
 
   // Now that we've added a placeholder, lets spin to win!
-  updateRotations();
+  // The 100ms delay adds a cool animation effect
+  setTimeout(updateRotations, 100);
 
   return article;
 }
@@ -286,11 +287,16 @@ function notify(notifyText) {
 /**
  * Unwrap PostMessages
  * @param {Function} fn - function to call
+ * @param {Function} msgType - function name
  * @param {String} params - Stringified object that contains a postData prop
  */
-function unwrapPostMessage(fn, params) {
+function unwrapPostMessage(fn, msgType, params) {
   let parsedParams = JSON.parse(params);
-  fn(parsedParams.postData);
+  let postData = parsedParams.postData;
+  if (msgType !== 'log') {
+    log(`"${msgType}" called with:`, postData);
+  }
+  fn(postData);
 }
 
 /**
@@ -307,15 +313,23 @@ function parsedPostMessage(messageType, postData) {
  * @param {String} message - message to log (or group)
  * @param {String|Object} extraStuff - extra stuff to log inside message group
  */
-function log(message, extraStuff) {
+function log() {
+  let args = Array.from(arguments);
+  let message = args[0];
+  let otherMessages = args.slice(1);
+  if (message instanceof Array) {
+    otherMessages.push(message[1]);
+    message = message[0];
+  }
+
   if (console && console.log) {
-    if (extraStuff && console.group) {
+    if (console.group && otherMessages.length) {
       console.group(message);
-      console.log(extraStuff);
+      otherMessages.forEach(msg => console.log(msg));
       console.groupEnd(message);
       return;
     }
-    console.log(message, extraStuff);
+    console.log(message);
   }
 }
 
@@ -325,6 +339,7 @@ function log(message, extraStuff) {
  */
 appWorker.addEventListener('message', function({data: [msgType, msgData]}) {
   let msgTypes = {
+    log,
     notify,
     drawPlaceholderRepo,
     updateRepository,
@@ -333,8 +348,7 @@ appWorker.addEventListener('message', function({data: [msgType, msgData]}) {
   };
 
   if (msgTypes[msgType]) {
-    log(`"${msgType}" called: `, msgData);
-    return unwrapPostMessage(msgTypes[msgType], msgData);
+    return unwrapPostMessage(msgTypes[msgType], msgType, msgData);
   }
   log(`"${msgType}" was not part of the allowed postMessage functions`);
 });

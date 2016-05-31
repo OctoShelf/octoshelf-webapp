@@ -133,8 +133,8 @@ function getRepoDetails(repository) {
       })
       .then(() => {
         if (repoStillOnDom) {
-          parsedPostMessage('toggleLoadingRepository', [id, url, false]);
           parsedPostMessage('updateRepository', repository);
+          parsedPostMessage('toggleLoadingRepository', [id, url, false]);
         }
       });
   }
@@ -158,8 +158,8 @@ function getRepoDetails(repository) {
     })
     .then(() => {
       if (repoStillOnDom) {
-        parsedPostMessage('toggleLoadingRepository', [id, url, false]);
         parsedPostMessage('updateRepository', repository);
+        parsedPostMessage('toggleLoadingRepository', [id, url, false]);
       }
     });
 }
@@ -186,11 +186,21 @@ function getRepoDetailsById(id) {
 /**
  * Unwrap PostMessages
  * @param {Function} fn - function to call
+ * @param {Function} msgType - function name
  * @param {String} params - Stringified object that contains a postData prop
  */
-function unwrapPostMessage(fn, params) {
+function unwrapPostMessage(fn, msgType, params) {
   let parsedParams = JSON.parse(params);
-  fn(parsedParams.postData);
+  let postData = parsedParams.postData;
+  log(`"${msgType}" called with:`, postData);
+  fn(postData);
+}
+
+/**
+ * This log function simply does a postMessage to the app
+ */
+function log() {
+  parsedPostMessage('log', [...arguments]);
 }
 
 /**
@@ -200,23 +210,6 @@ function unwrapPostMessage(fn, params) {
  */
 function parsedPostMessage(messageType, postData) {
   self.postMessage([messageType, JSON.stringify({postData})]);
-}
-
-/**
- * Log a message to console (if console exists)
- * @param {String} message - message to log (or group)
- * @param {String|Object} extraStuff - extra stuff to log inside message group
- */
-function log(message, extraStuff) {
-  if (console && console.log) {
-    if (extraStuff && console.group) {
-      console.group(message);
-      console.log(extraStuff);
-      console.groupEnd(message);
-      return;
-    }
-    console.log(message, extraStuff);
-  }
 }
 
 self.addEventListener('message', function({data: [msgType, msgData]}) {
@@ -229,8 +222,7 @@ self.addEventListener('message', function({data: [msgType, msgData]}) {
   };
 
   if (msgTypes[msgType]) {
-    log(`"${msgType}" called: `, msgData);
-    return unwrapPostMessage(msgTypes[msgType], msgData);
+    return unwrapPostMessage(msgTypes[msgType], msgType, msgData);
   }
-  log(`"${msgType}" was not part of the allowed postMessage functions`);
+  log(`"${msgType}" isn't part of the allowed functions`);
 });

@@ -34,6 +34,7 @@ a{ color: #fff}
 }
 .prListItem:hover .prMoreInfo {display: inline}
 .repo-title {display: inline-block;text-overflow: ellipsis;width: 150px;overflow: hidden}
+.sync {vertical-align: text-top}
 
 /* Magical overrides */
 .prList.lotsOfPRs .prListItem {height: 15px;width: 15px;margin: 1px;}
@@ -105,10 +106,10 @@ a{ color: #fff}
 @media (max-width: 600px) {
     .app {padding: 0.5rem;}
     .app-prompt {position: unset}
-    .bubble {
+    .bubble.bubble {
         position: static;
         transform: none !important;
-        width: 100%;
+        width: 100% !important;
         text-align: left;
         border: 0;
         height: unset;
@@ -116,7 +117,8 @@ a{ color: #fff}
         border-radius: 0;
         padding: 1rem;
     }
-    .bubble .repositoryInner {transform: none !important;}
+    .bubble.bubble .repositoryInner {transform: none !important;}
+    .repo-title {margin-right: 1rem;width: inherit;}
     .repository:after {display: none;}
     .addRepoInput {margin: 0.5rem 0}
 }
