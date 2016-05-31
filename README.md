@@ -5,6 +5,8 @@ trying to manage the constant flow of new pull requests?
 
 Cool, me too! OctoShelf was built to solve this exact issue!
 
+## [Live Demo Here](http://theirondeveloper.com/octoshelf/)
+
 ## Usage
 
 To use OctoShelf you can either go here ( TODO: PUSH GH-PAGES AND UPDATE ME :) ),
