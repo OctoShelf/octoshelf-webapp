@@ -6,6 +6,9 @@
     "lint": "eslint .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "pre-commit": [
+    "lint"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/TheIronDeveloper/octoshelf.git"
@@ -22,6 +25,7 @@
   "homepage": "https://github.com/TheIronDeveloper/octoshelf#readme",
   "devDependencies": {
     "eslint": "^2.11.0",
-    "eslint-config-google": "^0.5.0"
+    "eslint-config-google": "^0.5.0",
+    "pre-commit": "^1.1.3"
   }
 }
