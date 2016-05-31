@@ -3,11 +3,11 @@
   "version": "0.0.1",
   "description": "Manage your pull requests and issues with style!",
   "scripts": {
-    "lint": "eslint .",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "lint": "eslint scripts/",
+    "test": "ava tests/"
   },
   "pre-commit": [
-    "lint"
+    "lint", "test"
   ],
   "repository": {
     "type": "git",
@@ -24,8 +24,12 @@
   },
   "homepage": "https://github.com/TheIronDeveloper/octoshelf#readme",
   "devDependencies": {
+    "ava": "^0.15.1",
+    "babel-preset-es2015": "^6.9.0",
+    "babel-register": "^6.9.0",
     "eslint": "^2.11.0",
     "eslint-config-google": "^0.5.0",
+    "jsdom": "^9.2.1",
     "pre-commit": "^1.1.3"
   }
 }

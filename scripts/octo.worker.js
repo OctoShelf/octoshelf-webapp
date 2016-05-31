@@ -8,6 +8,7 @@
  * call `parsedPostMessage()`
  */
 
+'use strict';
 const repositories = [];
 const repositoriesSet = new Set();
 const repositoriesMap = new Map();
@@ -226,3 +227,32 @@ self.addEventListener('message', function({data: [msgType, msgData]}) {
   }
   log(`"${msgType}" isn't part of the allowed functions`);
 });
+
+// Exposing functions for avajs tests, only if module.exports is available
+try {
+  if (typeof module === 'object' && module.exports) {
+    module.exports = {
+
+      repositories,
+      repositoriesSet,
+      repositoriesMap,
+      accessToken,
+
+      setAccessToken,
+      simplifyPR,
+      addRepo,
+      fetchGithubApi,
+      fetchRepoDetails,
+      fetchRepoPulls,
+      fetchRepo,
+      getRepoDetails,
+      getAllRepoDetails,
+      getRepoDetailsById
+    };
+  }
+} catch (e) {
+  /**
+   * I know I am being extra paranoid by try-catching this. But testing related
+   * code should never harm core experiences.
+   */
+}
