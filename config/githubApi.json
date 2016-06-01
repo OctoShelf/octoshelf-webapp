@@ -1,0 +1,7 @@
+{
+  "accessToken": "",
+  "githubAuthUrl": "https://github.com/login/oauth/authorize",
+  "githubTokenUrl": "https://github.com/login/oauth/access_token",
+  "apiUrl": "https://api.github.com",
+  "githubUrl": "https://github.com/"
+}
