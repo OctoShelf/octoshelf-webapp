@@ -2,12 +2,15 @@
   "name": "octoshelf",
   "version": "0.0.1",
   "description": "Manage your pull requests and issues with style!",
+  "main": "index.js",
   "scripts": {
+    "start": "node .",
     "lint": "eslint scripts/",
     "test": "ava tests/"
   },
   "pre-commit": [
-    "lint", "test"
+    "lint",
+    "test"
   ],
   "repository": {
     "type": "git",
@@ -31,5 +34,9 @@
     "eslint-config-google": "^0.5.0",
     "jsdom": "^9.2.1",
     "pre-commit": "^1.1.3"
+  },
+  "dependencies": {
+    "ejs": "^2.4.2",
+    "express": "^4.13.4"
   }
 }

@@ -25,7 +25,9 @@
     <script src="./scripts/octoshelf.js"></script>
     <script>
         OctoShelf({
-            initAccessToken: ''
+            initAccessToken: '<%= accessToken %>',
+            initApiUrl: '<%= apiUrl %>',
+            initGithubUrl: '<%= githubUrl %>'
         });
     </script>
 </body>

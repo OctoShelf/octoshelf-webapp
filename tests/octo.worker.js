@@ -2,7 +2,7 @@
 import 'babel-register';
 import test from 'ava';
 import './helpers/setup-browser-env.js';
-import worker from '../scripts/octo.worker';
+import worker from '../public/scripts/octo.worker';
 
 
 test('web worker addRepo', t => {

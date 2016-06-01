@@ -24,16 +24,24 @@ With OctoShelf you can...
 
 ## Running the App
 
-Open up `index.html`, thats it!
+Running the app locally is simple:
+
+```
+npm install
+npm start
+```
+
+And the webpage should be available on localhost:3000/
 
 If you want to customize OctoShelf (for Corp Github Accounts) you can change
-the following variables when executing `OctoShelf();`
+the following variables inside config.json:
 
-```javascript
-OctoShelf({
-    initApiUrl: 'https://api.github.com',
-    initGithubUrl: 'https://github.com/'
-});
+```json
+{
+  "accessToken",    // You're generally going to want to leave this empty
+  "apiUrl",         // Api Urls, which can look super different in enterprise
+  "githubUrl"       // Github Url, the beginning part of the urls you visit. 
+}
 ```
 
 ## Contributing
