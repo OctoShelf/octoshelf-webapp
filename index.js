@@ -19,13 +19,15 @@ const tokenPayload = {
   "client_secret": github_client_secret
 };
 const requestAccessTokenOptions = {
-  url: githubApi.tokenUrl + '?client_id=' + github_client_id,
+  url: githubApi.tokenUrl,
   method: 'POST',
   json: true,
   headers: {
     Accept: 'application/json'
   }
 };
+
+githubApi.githubAuthUrl += '?client_id=' + github_client_id
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.engine('ejs', ejs.renderFile);
