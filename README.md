@@ -31,7 +31,6 @@ the following variables when executing `OctoShelf();`
 
 ```javascript
 OctoShelf({
-    initAccessToken: '__your_public_access_token__',
     initApiUrl: 'https://api.github.com',
     initGithubUrl: 'https://github.com/'
 });
@@ -47,6 +46,7 @@ free to open a new issue, or better yet, open a new pull request yourself! :)
 - [ ] Persist repositories that have been added.
 - [ ] Add a refresh interval
 - [ ] Add ability to remove nodes
+- [ ] Access_Token on server side
 - [ ] Allow nodes to grow and expand given enough screen size
 
 ## Potential Future Features

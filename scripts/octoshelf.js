@@ -363,12 +363,12 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
    * Initialize the app!
    */
   (function init() {
-    if (!initAccessToken || !initApiUrl || !initGithubUrl) {
-      let initVars = {initAccessToken, initApiUrl, initGithubUrl};
+    if (!initApiUrl || !initGithubUrl) {
+      let initVars = {initApiUrl, initGithubUrl};
       let missing = Object.keys(initVars)
         .filter(initVar => !initVars[initVar])
         .join(', ');
-      return notify(`Several Init Vars were found missing: ${missing}`, 4000);
+      return notify(`Several api vars were found missing: ${missing}`, 4000);
     }
     document.head.appendChild(stylesheetHelper);
     initAPIVariables({initAccessToken, initApiUrl, initGithubUrl});
