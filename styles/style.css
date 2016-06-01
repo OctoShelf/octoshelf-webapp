@@ -78,11 +78,9 @@ a{ color: #fff}
     box-shadow: 3px 2px 2px #ccc;
     width: 5px;
     margin: -1px auto;
-    height: 110px;
     position: absolute;
     left: 0;
     right: 0;
-    top: 149px;
     z-index: -2;
 }
 
@@ -91,6 +89,7 @@ a{ color: #fff}
     position: absolute;
     top: 5px;
     left: 5px;
+    z-index:1;
 }
 .notification {
     background: rgba(0,0,0,0.2);

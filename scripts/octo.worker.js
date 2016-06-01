@@ -12,8 +12,8 @@
 const repositories = [];
 const repositoriesSet = new Set();
 const repositoriesMap = new Map();
-const apiUrl = 'https://api.github.com';
-const githubUrl = 'https://github.com/';
+let apiUrl = '';
+let githubUrl = '';
 let accessToken = '';
 
 const repository = {
@@ -213,12 +213,25 @@ function parsedPostMessage(messageType, postData) {
   self.postMessage([messageType, JSON.stringify({postData})]);
 }
 
+/**
+ * Init a bunch of api variables so we can access github's api
+ * @param {String} initAccessToken - github access token
+ * @param {String} initApiUrl - github api url, which differs for corp accounts
+ * @param {String} initGithubUrl - github root url
+ */
+function initAPIVariables({initAccessToken, initApiUrl, initGithubUrl}) {
+  accessToken = initAccessToken;
+  apiUrl = initApiUrl;
+  githubUrl = initGithubUrl;
+}
+
 self.addEventListener('message', function({data: [msgType, msgData]}) {
   let msgTypes = {
     getRepoDetails,
     getAllRepoDetails,
     getRepoDetailsById,
     setAccessToken,
+    initAPIVariables,
     addRepo
   };
 
