@@ -47,6 +47,7 @@ app.get('/', function (req, res) {
   res.render('index.ejs', githubApi);
 });
 
-app.listen(3000, function () {
-  console.log('OctoShelf, http://localhost:3000/');
+let port = process.env.PORT || 5000;
+app.listen(port, function () {
+  console.log(`OctoShelf, http://localhost:${port}/`);
 });
