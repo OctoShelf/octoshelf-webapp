@@ -19,7 +19,7 @@ const tokenPayload = {
   "client_secret": github_client_secret
 };
 const requestAccessTokenOptions = {
-  url: githubApi.tokenUrl,
+  url: githubApi.githubTokenUrl,
   method: 'POST',
   json: true,
   headers: {
@@ -40,9 +40,8 @@ app.get('/', function (req, res) {
     let opts = Object.assign({}, requestAccessTokenOptions, { body: payload});
     return request(opts, function (error, response, body) {
       if (!error && response.statusCode == 200) {
-        console.log(body); // Print the google web page.
+        githubApi.accessToken = body.access_token;
       }
-      console.log(body);
       res.render('index.ejs', githubApi);
     });
   }
