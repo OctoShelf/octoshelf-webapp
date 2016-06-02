@@ -9,7 +9,7 @@
  */
 
 'use strict';
-const repositories = [];
+let repositories = [];
 const repositoriesSet = new Set();
 const repositoriesMap = new Map();
 let apiUrl = '';
@@ -60,6 +60,18 @@ function addRepo(url) {
 
   parsedPostMessage('drawPlaceholderRepo', newRepository);
   return getRepoDetails(newRepository);
+}
+
+/**
+ * Remove the repo from the dom
+ * @param {String} id - id of the repo we are removing
+ */
+function removeRepo(id) {
+  let {url} = repositoriesMap.get(id);
+  repositoriesSet.delete(url);
+  repositoriesMap.delete(id);
+  repositories = repositories.filter(repo => repo.id !== id);
+  parsedPostMessage('removeRepository', url);
 }
 
 /**
@@ -232,6 +244,7 @@ self.addEventListener('message', function({data: [msgType, msgData]}) {
     getRepoDetailsById,
     setAccessToken,
     initAPIVariables,
+    removeRepo,
     addRepo
   };
 

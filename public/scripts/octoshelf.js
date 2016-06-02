@@ -52,13 +52,16 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
     repoSection.addEventListener('click', function(event) {
       let {action, id} = event.target && event.target.dataset;
       let actionMap = {
-        refresh: () => {
-          event.preventDefault();
+        refresh() {
           parsedPostMessage('getRepoDetailsById', id);
+        },
+        remove() {
+          parsedPostMessage('removeRepo', id);
         }
       };
 
       if (actionMap[action]) {
+        event.preventDefault();
         actionMap[action]();
       }
     });
@@ -128,10 +131,17 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
     title.setAttribute('class', 'repo-title');
 
     let sync = document.createElement('a');
-    sync.setAttribute('href', '#');
-    sync.setAttribute('class', 'octicon octicon-sync sync');
-    sync.setAttribute('data-action', 'refresh');
-    sync.setAttribute('data-id', '');
+    let trash = document.createElement('a');
+    let actions = [
+      {elem: sync, action: 'refresh', className: 'sync'},
+      {elem: trash, action: 'remove', className: 'trashcan'}
+    ];
+    actions.forEach(({elem, action, className}) => {
+      elem.setAttribute('href', '#');
+      elem.setAttribute('data-action', action);
+      elem.setAttribute('class', `octicon octicon-${className} action`);
+      elem.setAttribute('data-id', '');
+    });
 
     let prListItems = document.createElement('ul');
     prListItems.setAttribute('class', 'prList');
@@ -149,7 +159,7 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
       .appendChild(title)
       .appendChild(document.createTextNode(url));
 
-    header.appendChild(sync);
+    actions.forEach(({elem}) => header.appendChild(elem));
     repositoryInner.appendChild(prListItems);
 
     // Now that we've added a placeholder, lets spin to win!
@@ -180,8 +190,8 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
         article.setAttribute('id', id);
       }
 
-      let sync = article.querySelector('.octicon-sync');
-      sync.setAttribute('data-id', id);
+      let actions = article.querySelectorAll('[data-action]');
+      actions.forEach(action => action.setAttribute('data-id', id));
 
       // Swap out the title with a better one
       let repoTitle = article.querySelector('.repo-title');
@@ -238,6 +248,8 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
       return;
     }
     article.parentNode.removeChild(article);
+
+    setTimeout(updateRotations, 100);
   }
 
   /**

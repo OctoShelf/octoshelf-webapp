@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node .",
-    "lint": "eslint scripts/",
+    "lint": "eslint public/scripts/",
     "test": "ava tests/"
   },
   "pre-commit": [

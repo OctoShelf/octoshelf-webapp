@@ -34,7 +34,7 @@ a{ color: #fff}
 }
 .prListItem:hover .prMoreInfo {display: inline}
 .repo-title {display: inline-block;text-overflow: ellipsis;width: 150px;overflow: hidden}
-.sync {vertical-align: text-top}
+.action {vertical-align: text-top;margin: 5px}
 
 /* Magical overrides */
 .prList.lotsOfPRs .prListItem {height: 15px;width: 15px;margin: 1px;}
@@ -120,4 +120,5 @@ a{ color: #fff}
     .repo-title {margin-right: 1rem;width: inherit;}
     .repository:after {display: none;}
     .addRepoInput {margin: 0.5rem 0}
+    .action {margin: 0 10px 0 0}
 }
