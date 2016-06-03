@@ -1,4 +1,4 @@
-# [OctoShelf](http://theirondeveloper.com/octoshelf/) - A Multi-Repo PR Manager
+# [OctoShelf](http://www.octoshelf.com/) - A Multi-Repo PR Manager
 
 Ever find yourself tabbing between multiple repos across several orgs,
 trying to manage the constant flow of new pull requests?
@@ -10,7 +10,7 @@ open pull requests, and can be refreshed as often as you like.
 
 ## Usage
 
-To use OctoShelf you can either go [here](http://theirondeveloper.com/octoshelf/),
+To use OctoShelf you can either go [here](http://www.octoshelf.com/),
 or you can fork and hack this project to meet your own use cases.
 
 ## Features
@@ -31,18 +31,32 @@ npm install
 npm start
 ```
 
-And the webpage should be available on localhost:3000/
+And the webpage should be available on localhost:5000/
 
 If you want to customize OctoShelf (for Corp Github Accounts) you can change
-the following variables inside config.json:
+the following variables inside `config/githubApi.json`:
 
-```json
+```javascript
 {
-  "accessToken",    // You're generally going to want to leave this empty
-  "apiUrl",         // Api Urls, which can look super different in enterprise
-  "githubUrl"       // Github Url, the beginning part of the urls you visit. 
+  "accessToken": "",    // You'll probably want this to be empty, but useful if you're using a personal access token
+  "githubAuthUrl": "",  // Populate the github authentication url
+  "githubTokenUrl": "", // Once youn finish authenticating with github, we'll hit this url to grab an access token
+  "apiUrl": "",         // Github's API url. It may look a little different for enterprise hosts
+  "githubUrl": ""       // When you add a repo, we will replace this part with `apiUrl`
 }
 ```
+
+You'll notice you have limited capabilities, and may hit Github's ratelimit rather quickly.
+To "fix" this, you have two options:
+
+* [Generate a public access token](https://github.com/settings/tokens/new), and fill the `accessToken` property in `githubApi.json`\
+* [Register a new OAuth Token](https://github.com/settings/applications/new), and run the following:
+
+```
+GITHUB_CLIENT_ID=xxx GITHUB_CLIENT_SECRET=xxx npm start
+```
+
+For more information, check out: https://developer.github.com/v3/oauth/
 
 ## Contributing
 
@@ -53,8 +67,6 @@ free to open a new issue, or better yet, open a new pull request yourself! :)
 
 - [ ] Persist repositories that have been added.
 - [ ] Add a refresh interval
-- [ ] Add ability to remove nodes
-- [ ] Access_Token on server side
 - [ ] Allow nodes to grow and expand given enough screen size
 
 ## Potential Future Features
