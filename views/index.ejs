@@ -16,14 +16,32 @@
                 <input type="text" id="addRepoInput" class="addRepoInput" placeholder="Add Repo" />
                 <div>
                     <a href="#" id="syncAll" class="octicon octicon-sync"></a>
-                    <a href="<%= githubAuthUrl %>" id="authStatus" class="octicon octicon-issue-reopened"></a>
+                    <% if(!accessToken) { %>
+                        <a href="<%= githubAuthUrl %>" id="authStatus" class="octicon octicon-alert tokenNeeded-anchor">
+                            <span class="tokenNeeded-content">
+                                While you are absolutely free to use this app without authenticating,
+                                GitHub will start to ratelimit your api calls.
+                            </span>
+                        </a>
+                    <% } %>
                 </div>
             </form>
         </section>
         <section id="repoSection" class="app-repositories"></section>
         <section id="notifications" class="notifications"></section>
         <div class="infoPanel">
-            <a href="https://github.com/TheIronDeveloper/octoshelf" class="octicon octicon-mark-github"></a>
+            A
+            <a href="https://github.com" class="octicon octicon-logo-github"></a>
+            powered
+            <span class="octicon octicon-git-pull-request"></span>
+            <span class="octicon octicon-dashboard"></span>
+            <div class="octicon octicon-question moreInfo-wrapper" tabindex="1"></div>
+            <div class="moreInfo-content">
+                <h2>Welcome to OctoShelf!</h2>
+                This is a side-projected aimed at making it easier to manage pull requests
+                across multiple repositories. Feel free to make contributions or fork me.
+                <a class="octicon octicon-mark-github moreinfo-githubLink" href="https://github.com/TheIronDeveloper/octoshelf"></a>
+            </div>
         </div>
     </main>
     <script src="./scripts/octoshelf.js"></script>

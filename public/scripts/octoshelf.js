@@ -134,7 +134,7 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
     let trash = document.createElement('a');
     let actions = [
       {elem: sync, action: 'refresh', className: 'sync'},
-      {elem: trash, action: 'remove', className: 'trashcan'}
+      {elem: trash, action: 'remove', className: 'x'}
     ];
     actions.forEach(({elem, action, className}) => {
       elem.setAttribute('href', '#');
