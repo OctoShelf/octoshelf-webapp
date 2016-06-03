@@ -2,14 +2,77 @@
 import 'babel-register';
 import test from 'ava';
 import './helpers/setup-browser-env.js';
-import worker from '../public/scripts/octo.worker';
+
+const workerPath = '../public/scripts/octo.worker';
+const originalFetch = global.fetch;
+let worker;
+
+function getRepoId() {
+  return Date.now() + ~~(Math.random() * 100);
+}
+
+test.beforeEach(t => {
+  global.self = {
+    addEventListener: () => {},
+    postMessage: () => {}
+  };
+  worker = require(workerPath);
+});
+
+test.afterEach(t => {
+  delete require.cache[require.resolve(workerPath)];
+  global.fetch = originalFetch;
+});
 
 
 test('web worker addRepo', t => {
 
-  t.is(worker.repositories.length, 0);
-  t.is(worker.repositoriesSet.has('test'), false);
+  let state = worker.getWorkerState();
+  t.is(state.repositories.length, 0);
+  t.is(state.repositoriesSet.has('test'), false);
+
   worker.addRepo('test');
-  t.is(worker.repositories.length, 1);
-  t.is(worker.repositoriesSet.has('test'), true);
+  state = worker.getWorkerState();
+  t.is(state.repositories.length, 1);
+  t.is(state.repositoriesSet.has('test'), true);
+});
+
+test('web worker removeRepo', t => {
+
+  // Mock out fetch
+  global.fetch = function(url) {
+    let fakeFetchResponse = {
+      json() {
+
+        if (url.includes('/pulls')) {
+          return [{}, {}];
+        }
+
+        return {
+          id: getRepoId(),
+          name: url,
+          fullName: url
+        };
+      }
+    };
+    return Promise.resolve(fakeFetchResponse);
+  };
+
+  return worker.addRepo('test').then(() => {
+    worker.addRepo('test2').then(() => {
+      worker.addRepo('test3').then(() => {
+
+        let state = worker.getWorkerState();
+        t.is(state.repositories.length, 3);
+
+        let repoToRemove = state.repositories[1].id;
+        worker.removeRepo(repoToRemove);
+        state = worker.getWorkerState();
+        t.is(state.repositories.length, 2);
+        t.is(state.repositoriesSet.has('test2'), false);
+
+      })
+    });
+  });
+
 });

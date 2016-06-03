@@ -102,6 +102,8 @@ a{ color: #fff}
 }
 .notification.fadeOut {opacity: 0}
 
+.infoPanel {background: #333;padding: 1rem;position: absolute; bottom: 0; right: 0;}
+
 @media (max-width: 600px) {
     .app {padding: 0.5rem;}
     .app-prompt {position: unset}

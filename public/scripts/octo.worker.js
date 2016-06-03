@@ -67,7 +67,7 @@ function addRepo(url) {
  * @param {String} id - id of the repo we are removing
  */
 function removeRepo(id) {
-  let {url} = repositoriesMap.get(id);
+  let {url} = repositoriesMap.get(String(id));
   repositoriesSet.delete(url);
   repositoriesMap.delete(id);
   repositories = repositories.filter(repo => repo.id !== id);
@@ -152,7 +152,7 @@ function getRepoDetails(repository) {
       });
   }
 
-  fetchRepo(repoUrl)
+  return fetchRepo(repoUrl)
     .then(([{id, name, full_name}, repoPulls]) => {
       /* eslint camelcase:0 */
       repository.id = id;
@@ -237,6 +237,15 @@ function initAPIVariables({initAccessToken, initApiUrl, initGithubUrl}) {
   githubUrl = initGithubUrl;
 }
 
+/**
+ * This function is used almost exclusively for testing. It returns an object
+ * that contains the app's state.
+ * @return {Object} state
+ */
+function getWorkerState() {
+  return {repositories, repositoriesSet, repositoriesMap, accessToken};
+}
+
 self.addEventListener('message', function({data: [msgType, msgData]}) {
   let msgTypes = {
     getRepoDetails,
@@ -259,14 +268,12 @@ try {
   if (typeof module === 'object' && module.exports) {
     module.exports = {
 
-      repositories,
-      repositoriesSet,
-      repositoriesMap,
-      accessToken,
+      getWorkerState,
 
       setAccessToken,
       simplifyPR,
       addRepo,
+      removeRepo,
       fetchGithubApi,
       fetchRepoDetails,
       fetchRepoPulls,
