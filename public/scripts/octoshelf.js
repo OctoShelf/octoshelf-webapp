@@ -130,6 +130,7 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
     let title = document.createElement('span');
     title.setAttribute('class', 'repo-title');
 
+    let actionsElement = document.createElement('div');
     let sync = document.createElement('a');
     let trash = document.createElement('a');
     let actions = [
@@ -152,15 +153,18 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
       repositoryInner.style.cssText = firstChild.getAttribute('style');
     }
 
-    repoSection
-      .appendChild(article)
+    article
       .appendChild(repositoryInner)
       .appendChild(header)
       .appendChild(title)
       .appendChild(document.createTextNode(url));
 
-    actions.forEach(({elem}) => header.appendChild(elem));
     repositoryInner.appendChild(prListItems);
+    actions.forEach(({elem}) => actionsElement.appendChild(elem));
+    repositoryInner.appendChild(actionsElement);
+
+    // The Repo is built, lets append it!
+    repoSection.appendChild(article);
 
     // Now that we've added a placeholder, lets spin to win!
     // The 100ms delay adds a cool animation effect
