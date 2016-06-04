@@ -27,13 +27,45 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
   const prResizeThreshold = 8;
 
   /**
+   * RepoStateManager - Abstracts away persisting repository urls and CRUDs.
+   * Should we decide to change to a cookie, session storage, etc, we can
+   * simply update it here, and not have to worry about a stray localStorage
+   * elsewhere.
+   */
+  const repoStateManager = {
+    // An array of repository urls
+    repositories: [],
+    // A set of unique repository urls, used to prevent duplicates being added
+    uniqueRepos: new Set(),
+    add(url) {
+      if (!this.uniqueRepos.has(url)) {
+        this.repositories.push(url);
+        localStorage.setItem('repositories', JSON.stringify(this.repositories));
+      }
+    },
+    remove(url) {
+      this.repositories = this.repositories.filter(repoUrl => repoUrl !== url);
+      this.uniqueRepos.delete(url);
+      localStorage.setItem('repositories', JSON.stringify(this.repositories));
+    },
+    fetch() {
+      let repoString = localStorage.getItem('repositories') || '[]';
+      this.repositories = JSON.parse(repoString);
+      this.repositories.forEach(url => {
+        this.uniqueRepos.add(url);
+        addRepository(url);
+      });
+    }
+  };
+
+  /**
    * Load the App event listeners
    */
   function loadEventListeners() {
     let resizeDebounce;
     addRepoForm.addEventListener('submit', function(event) {
       event.preventDefault();
-      parsedPostMessage('addRepo', addRepoInput.value);
+      addRepository(addRepoInput.value);
       addRepoInput.value = '';
     });
     syncAll.addEventListener('click', function(event) {
@@ -165,6 +197,7 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
 
     // The Repo is built, lets append it!
     repoSection.appendChild(article);
+    repoStateManager.add(url);
 
     // Now that we've added a placeholder, lets spin to win!
     // The 100ms delay adds a cool animation effect
@@ -242,6 +275,14 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
   }
 
   /**
+   * Add a repository to the DOM
+   * @param {String} url - repo url
+   */
+  function addRepository(url) {
+    parsedPostMessage('addRepo', url);
+  }
+
+  /**
    * Remove a repository from the DOM
    * @param {String} url - repositories have a data-url="" to target from
    */
@@ -252,6 +293,7 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
       return;
     }
     article.parentNode.removeChild(article);
+    repoStateManager.remove(url);
 
     setTimeout(updateRotations, 100);
   }
@@ -389,6 +431,7 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
     document.head.appendChild(stylesheetHelper);
     initAPIVariables({initAccessToken, initApiUrl, initGithubUrl});
     updateBubbleStyles(window.innerHeight, window.innerWidth);
+    repoStateManager.fetch();
     loadEventListeners();
   })();
 }

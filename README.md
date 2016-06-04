@@ -65,7 +65,6 @@ free to open a new issue, or better yet, open a new pull request yourself! :)
 
 ## TODO
 
-- [ ] Persist repositories that have been added.
 - [ ] Add a refresh interval
 - [ ] Allow nodes to grow and expand given enough screen size
 
