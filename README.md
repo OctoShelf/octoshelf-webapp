@@ -65,7 +65,6 @@ free to open a new issue, or better yet, open a new pull request yourself! :)
 
 ## TODO
 
-- [ ] Add a refresh interval
 - [ ] Allow nodes to grow and expand given enough screen size
 
 ## Potential Future Features

@@ -20,8 +20,11 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
   const addRepoForm = document.getElementById('addRepoForm');
   const addRepoInput = document.getElementById('addRepoInput');
   const notifications = document.getElementById('notifications');
+  const refreshRateIcon = document.getElementById('refreshRateIcon');
+  const refreshRateOptions = document.getElementById('refreshRateOptions');
 
   const stylesheetHelper = document.createElement("style");
+  const startingRefreshRate = 60000;
   const bubbleSize = 150;
   const centerDistance = 250;
   const prResizeThreshold = 8;
@@ -96,6 +99,14 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
         event.preventDefault();
         actionMap[action]();
       }
+    });
+    refreshRateOptions.addEventListener('change', function(event) {
+      let {value} = event.target;
+      let delay = Number(value);
+      if (delay) {
+        return startRefreshing(delay);
+      }
+      return stopRefreshing();
     });
   }
 
@@ -390,6 +401,31 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
   }
 
   /**
+   * Post a message to the WebWorker telling it to start refreshing
+   * @param {Number} delay - delay between each refresh
+   */
+  function startRefreshing(delay = 1000) {
+    parsedPostMessage('startRefreshing', delay);
+  }
+
+  /**
+   * Post a message to the WebWorker telling it to stop refreshing
+   */
+  function stopRefreshing() {
+    parsedPostMessage('stopRefreshing', '');
+  }
+
+  /**
+   * Subtle UI indication that a refresh has happened
+   */
+  function hasRefreshed() {
+    refreshRateIcon.style.cssText = 'color: #61FF61;transform: scale(4);';
+    setTimeout(() => {
+      refreshRateIcon.style.cssText = '';
+    }, 500);
+  }
+
+  /**
    * Contract: appWorker.postMessage([msgType, msgData]);
    * @type {Worker}
    */
@@ -397,6 +433,7 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
     let msgTypes = {
       log,
       notify,
+      hasRefreshed,
       drawPlaceholderRepo,
       updateRepository,
       removeRepository,
@@ -432,6 +469,7 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
     initAPIVariables({initAccessToken, initApiUrl, initGithubUrl});
     updateBubbleStyles(window.innerHeight, window.innerWidth);
     repoStateManager.fetch();
+    startRefreshing(startingRefreshRate);
     loadEventListeners();
   })();
 }

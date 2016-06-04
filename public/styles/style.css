@@ -147,13 +147,11 @@ a{ color: #fff}
 
 .infoPanel {background: #333;color:#fff;padding: 1rem;position: absolute; bottom: 0; right: 0;}
 .infoPanel .octicon {vertical-align: middle}
+.infoPanel-actions {border-left: 1px solid #fff;padding-left: 0.5rem;margin-left: 0.5rem;}
 
 .moreInfo-wrapper {
     cursor: pointer;
     position: relative;
-    border-left: 1px solid #fff;
-    padding-left: 0.5rem;
-    margin-left: 0.5rem;
 }
 .moreInfo-content {
     background: rgba(255,255,255,0.8);
@@ -183,6 +181,30 @@ a{ color: #fff}
     width: 300px;
 }
 .moreinfo-githubLink {color: #333;vertical-align: middle;align-self: flex-end;font-size:2rem;}
+
+.refreshRate_wrapper {
+    cursor: pointer;
+    position: relative;
+}
+.refreshRate_icon {transition: all .5s ease;}
+.refreshRate_moreInfo {
+    background: #fff;
+    color: #333;
+    width: 120px;
+    height: 0;
+    padding: 0;
+    overflow: hidden;
+    position: absolute;
+    bottom: 1rem;
+    right: -1rem;
+    transition: all .5s ease;
+}
+.refreshRate_wrapper:hover .refreshRate_moreInfo {height: 120px;padding: 0.5rem;border: 1px solid #333;}
+.refreshRate_options {list-style: none;padding: 0;margin: 0}
+.refreshRate_option {cursor: pointer;display:block;position: relative;}
+.refreshRate_input {position: absolute;top: 3px;left: 3px;}
+.refreshRate_inputDisplay {display: inline-block;width: 100%;padding: 5px 0 5px 1.5rem;}
+.refreshRate_input:checked + .refreshRate_inputDisplay {background: #3F51B5;color: #fff;}
 
 @media (max-width: 600px) {
     .app {padding: 0.5rem;}

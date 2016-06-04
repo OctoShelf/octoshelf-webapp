@@ -22,6 +22,41 @@ const repository = {
   fetchedDetails: false
 };
 
+// Its refreshing!
+const peppermint = {
+  refreshTimeout: null,
+  refreshFn(delay) {
+    log(`Refreshing at ${new Date()}`);
+    parsedPostMessage('hasRefreshed', '');
+    getAllRepoDetails();
+    this.refreshTimeout = setTimeout(() => this.refreshFn(delay), delay);
+  },
+  startRefreshing(delay) {
+    if (this.refreshTimeout) {
+      stopRefreshing();
+    }
+    this.refreshTimeout = setTimeout(() => this.refreshFn(delay), delay);
+  },
+  stopRefreshing() {
+    clearTimeout(this.refreshTimeout);
+  }
+};
+
+/**
+ * Start the refreshing process
+ * @param {Number} delay -  delay between each refresh
+ */
+function startRefreshing(delay) {
+  peppermint.startRefreshing(delay);
+}
+
+/**
+ * End the refreshing process
+ */
+function stopRefreshing() {
+  peppermint.stopRefreshing();
+}
+
 /**
  * Set the access token for future github api requests
  * @param {String} newAccessToken - new access token from server
@@ -248,6 +283,8 @@ function getWorkerState() {
 
 self.addEventListener('message', function({data: [msgType, msgData]}) {
   let msgTypes = {
+    startRefreshing,
+    stopRefreshing,
     getRepoDetails,
     getAllRepoDetails,
     getRepoDetailsById,
