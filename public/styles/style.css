@@ -87,6 +87,21 @@ a{ color: #fff}
 .app-prompt,
 .app-repositories{text-align: center}
 .app-prompt {position: absolute;top: 0;left: 0;z-index: 1}
+
+.addRepoInput-wrapper {
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    color: #000;
+    display: inline-block;
+    margin: 0.5rem;
+    overflow: hidden;
+    text-align: left;
+    white-space: nowrap;
+}
+.addRepoInput-prefix {padding: 5px 5px 5px 2px;text-decoration: underline;font-weight: bold;color: #555;background: #eee}
+.addRepoInput-input {border: 1px dashed #ccc;height: 1.5rem;padding: 5px;width: 100%}
+
 .bubble {
     display: flex;
     flex-direction: column;
@@ -103,15 +118,19 @@ a{ color: #fff}
     border-radius: 50%;
     color: #fff;
 }
-.repository {transform: rotate(0deg) translateY(-250px);box-shadow: 3px 2px 2px #ccc}
+.app-repositoriesWrapper {position: absolute}
+.app-repositories {position: relative}
+.repository {transform: rotate(0deg) translateY(-300px);box-shadow: 3px 2px 2px #ccc}
 .repository.loading {opacity: 0.2}
 .repository:after {
     content: ' ';
     display: block;
     background: #333;
     box-shadow: 3px 2px 2px #ccc;
+    height: 0;
     width: 5px;
     margin: -1px auto;
+    transition: all .5s ease;
     position: absolute;
     left: 0;
     right: 0;
@@ -145,7 +164,7 @@ a{ color: #fff}
 }
 .notification.fadeOut {opacity: 0}
 
-.infoPanel {background: #333;color:#fff;padding: 1rem;position: absolute; bottom: 0; right: 0;}
+.infoPanel {background: #333;color:#fff;padding: 1rem;position: absolute; bottom: 0; right: 0;text-align: right}
 .infoPanel .octicon {vertical-align: middle}
 .infoPanel-actions {border-left: 1px solid #fff;padding-left: 0.5rem;margin-left: 0.5rem;}
 
@@ -154,7 +173,7 @@ a{ color: #fff}
     position: relative;
 }
 .moreInfo-content {
-    background: rgba(255,255,255,0.8);
+    background: rgba(255,255,255,0.9);
     border: 1px solid #333;
     border-radius: 50% 50% 0 50%;
     color: #333;
@@ -185,6 +204,7 @@ a{ color: #fff}
 .refreshRate_wrapper {
     cursor: pointer;
     position: relative;
+    text-align: left
 }
 .refreshRate_icon {transition: all .5s ease;}
 .refreshRate_moreInfo {
@@ -208,7 +228,9 @@ a{ color: #fff}
 
 @media (max-width: 600px) {
     .app {padding: 0.5rem;}
-    .app-prompt {position: unset}
+    .app-prompt,
+    .app-repositoriesWrapper,
+    .app-repositories {position: unset; display: block;height: unset; width: 100% !important;}
     .bubble.bubble {
         position: static;
         transform: none !important;
@@ -223,10 +245,14 @@ a{ color: #fff}
     .bubble.bubble .repositoryInner {transform: none !important;}
     .repo-title {margin-right: 1rem;width: inherit;}
     .repository:after {display: none;}
+    .addRepoInput-wrapper {padding: 0}
+    .addRepoInput-prefix {display: inline-block;padding: 0.5rem;background: #eee}
+    .addRepoInput-input {}
     .addRepoInput {margin: 0.5rem 0}
     .action {margin: 0 10px 0 0}
 
     .tokenNeeded-anchor:hover .tokenNeeded-content {left: 0;width: 100%;height: unset;}
+    .infoPanel {width: 100%;}
     .moreInfo-wrapper:focus + .moreInfo-content {
         width: 100%;
         border-radius: 0;

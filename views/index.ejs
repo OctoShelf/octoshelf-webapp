@@ -13,21 +13,26 @@
     <section id="addSection" class="app-prompt">
         <form id="addRepoForm" class="bubble">
             <h1>OctoShelf</h1>
-            <input type="text" id="addRepoInput" class="addRepoInput" placeholder="Add Repo" />
+            <div class="addRepoInput-wrapper">
+                <div class="addRepoInput-prefix"><%= githubUrl %></div>
+                <input type="text" id="addRepoInput" class="addRepoInput-input" placeholder="Repository Url" />
+            </div>
             <div>
                 <a href="#" id="syncAll" class="octicon octicon-sync"></a>
                 <% if(!accessToken) { %>
                 <a href="<%= githubAuthUrl %>" id="authStatus" class="octicon octicon-alert tokenNeeded-anchor">
                             <span class="tokenNeeded-content">
-                                While you are absolutely free to use this app without authenticating,
-                                GitHub will start to ratelimit your api calls.
+                                You are absolutely free to use this app without authenticating,
+                                however GitHub ratelimits api calls of token-less users.
                             </span>
                 </a>
                 <% } %>
             </div>
         </form>
     </section>
-    <section id="repoSection" class="app-repositories"></section>
+    <section class="app-repositoriesWrapper">
+        <section id="repoSection" class="app-repositories"></section>
+    </section>
     <section id="notifications" class="notifications"></section>
     <div class="infoPanel">
         <span class="infoPanel-description">

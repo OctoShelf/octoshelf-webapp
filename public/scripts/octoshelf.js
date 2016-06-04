@@ -24,9 +24,10 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
   const refreshRateOptions = document.getElementById('refreshRateOptions');
 
   const stylesheetHelper = document.createElement("style");
+  const inputWrapperSize = 130;
   const startingRefreshRate = 60000;
   const bubbleSize = 150;
-  const centerDistance = 250;
+  const centerDistance = 300;
   const prResizeThreshold = 8;
 
   /**
@@ -70,6 +71,11 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
       event.preventDefault();
       addRepository(addRepoInput.value);
       addRepoInput.value = '';
+    });
+    addRepoInput.addEventListener('input', function() {
+      if (addRepoInput.value.includes(initGithubUrl)) {
+        addRepoInput.value = addRepoInput.value.replace(initGithubUrl, '');
+      }
     });
     syncAll.addEventListener('click', function(event) {
       event.preventDefault();
@@ -125,10 +131,25 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
     }
     let size = bubbleSize;
     let dims = ['height', 'width'].map(prop => prop + `:${size}px`).join(';');
-    let cssRule = `top:${top}px;left:${left}px;${dims}`;
+    let pos = `top:${top}px;left:${left}px;`;
+    let cssRule = `transition: all .5s ease;${pos};${dims}`;
     let afterRule = `top: ${size - 1}px;height:${size}px`;
-    stylesheetHelper.sheet.insertRule(`.bubble {${cssRule}}`, 0);
+
+    stylesheetHelper.sheet.insertRule(`.app-prompt, .app-repositoriesWrapper {${cssRule}}`, 0);
+    stylesheetHelper.sheet.insertRule(`.bubble {${dims}}`, 0);
     stylesheetHelper.sheet.insertRule(`.repository:after {${afterRule}}`, 0);
+  }
+
+  /**
+   * Github's Prefix is dynamic. To account for corp github urls,
+   * when the page loads we auto resize the font-size to make sure it fits
+   */
+  function resizeGitubPrefix() {
+    let prefix = document.querySelector('.addRepoInput-prefix');
+    let prefixWidth = prefix.scrollWidth;
+    let sizeRatio = ~~((inputWrapperSize / (prefixWidth + 10)) * 100) / 100;
+    let fontSize = sizeRatio < 1 ? sizeRatio : 1;
+    prefix.style.fontSize = `${fontSize}rem`;
   }
 
   /**
@@ -468,6 +489,7 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
     document.head.appendChild(stylesheetHelper);
     initAPIVariables({initAccessToken, initApiUrl, initGithubUrl});
     updateBubbleStyles(window.innerHeight, window.innerWidth);
+    resizeGitubPrefix();
     repoStateManager.fetch();
     startRefreshing(startingRefreshRate);
     loadEventListeners();
