@@ -14,8 +14,7 @@
  * @param {String} initGithubUrl - github root url
  */
 function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', initGithubUrl = 'https://github.com/'}) {
-  const appWorker = new SharedWorker('/scripts/octo.worker.js');
-
+  const appWorker = new Worker('./scripts/octo.worker.js');
   const repoSection = document.getElementById('repoSection');
   const syncAll = document.getElementById('syncAll');
   const addRepoForm = document.getElementById('addRepoForm');
@@ -58,7 +57,7 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
       this.repositories = JSON.parse(repoString);
       this.repositories.forEach(url => {
         this.uniqueRepos.add(url);
-        parsedPostMessage('addRepoFromLocalStorage', url);
+        addRepository(url);
       });
     }
   };
@@ -165,6 +164,7 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
       document.querySelector(`[data-url="${url}"]`);
 
     if (!article) {
+      notify('Something went wrong');
       return;
     }
 
@@ -326,6 +326,7 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
   function removeRepository(url) {
     let article = document.querySelector(`[data-url="${url}"]`);
     if (!article) {
+      notify('Something went wrong');
       return;
     }
     article.parentNode.removeChild(article);
@@ -397,7 +398,7 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
    * @param {*} postData - Some data that we will wrap into a stringified object
    */
   function parsedPostMessage(messageType, postData) {
-    appWorker.port.postMessage([messageType, JSON.stringify({postData})]);
+    appWorker.postMessage([messageType, JSON.stringify({postData})]);
   }
 
   /**
@@ -454,7 +455,7 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
    * Contract: appWorker.postMessage([msgType, msgData]);
    * @type {Worker}
    */
-  appWorker.port.addEventListener('message', function({data: [msgType, msgData]}) {
+  appWorker.addEventListener('message', function({data: [msgType, msgData]}) {
     let msgTypes = {
       log,
       notify,
@@ -491,15 +492,10 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
       return notify(`Several api vars were found missing: ${missing}`, 4000);
     }
     document.head.appendChild(stylesheetHelper);
-    appWorker.port.start();
-
     initAPIVariables({initAccessToken, initApiUrl, initGithubUrl});
     updateBubbleStyles(window.innerHeight, window.innerWidth);
     resizeGitubPrefix();
     repoStateManager.fetch();
-    setTimeout(() => {
-      parsedPostMessage('getAllCachedRepoDetails');
-    }, 1);
     startRefreshing(startingRefreshRate);
     loadEventListeners();
   })();

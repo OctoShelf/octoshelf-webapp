@@ -47,12 +47,12 @@ test('web worker addRepo', t => {
 
   let state = worker.getWorkerState();
   t.is(state.repositories.length, 0);
-  t.is(state.repositories.some(repo => repo.url === 'test'), false);
+  t.is(state.repositoriesMap.has('test'), false);
 
   worker.addRepo('test');
   state = worker.getWorkerState();
   t.is(state.repositories.length, 1);
-  t.is(state.repositories.some(repo => repo.url === 'test'), true);
+  t.is(state.repositoriesMap.has('test'), true);
 });
 
 test('web worker removeRepo', t => {
@@ -68,7 +68,7 @@ test('web worker removeRepo', t => {
         worker.removeRepo(repoToRemove);
         state = worker.getWorkerState();
         t.is(state.repositories.length, 2);
-        t.is(state.repositories.some(repo => repo.url === 'test2'), false);
+        t.is(state.repositoriesMap.has('test2'), false);
       })
     });
   });
