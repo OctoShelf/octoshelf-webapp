@@ -15,9 +15,9 @@ let apiUrl = '';
 let githubUrl = '';
 let accessToken = '';
 
-let latestPRCount = 0;
-let pullRequestCount = 0;
-let hidePRNotifications = false;
+let currentPRMap = new Map();
+let previousPRMap = new Map();
+let isPageVisible = true;
 
 const repository = {
   url: '',
@@ -212,6 +212,39 @@ function getRepoDetails(repository) {
 }
 
 /**
+ * Return an array of new pull requests
+ * @param {Map} fetchedResults - current map of pull requests
+ * @param {Map} previousResults - previous map of pull requests
+ * @return {Array} new pull requests
+ */
+function getNewPullRequests(fetchedResults, previousResults) {
+  var pullRequests = [];
+  fetchedResults.forEach((pr, id) => {
+    if (!previousResults.has(id)) {
+      pullRequests.push(pr);
+    }
+  });
+  return pullRequests;
+}
+
+/**
+ * Send out a notification listing out all the new open pull requests
+ * @param {Array} pullRequests - array of new pull requests
+ * @param {Boolean} isPageVisible - toggle if we want to show the notification
+ */
+function sendNewPullRequestNotification(pullRequests, isPageVisible) {
+  if (!isPageVisible) {
+    let size = pullRequests.length;
+    let requestWord = size > 1 ? 'requests' : 'request';
+    let title = `[OctoShelf] : ${size} new pull ${requestWord}`;
+    let body = pullRequests.map(pr => {
+      return '• ' + (pr.url || '').replace(githubUrl, '');
+    }).join('\n');
+    sendNotification(title, body);
+  }
+}
+
+/**
  * Foreach through all the repos, getting details for each of them
  * (which in turn updates the DOM with each of them)
  */
@@ -219,20 +252,20 @@ function getAllRepoDetails() {
   let allRepos = repositories.map(repository => getRepoDetails(repository));
   Promise.all(allRepos)
     .then(repos => {
-      let newPRCount = repos.reduce((m, repo) => m + repo.prs.length, 0);
-      latestPRCount = newPRCount;
+      let newPRMap = new Map();
+      repos.forEach(repo => repo.prs.forEach(pr => newPRMap.set(pr.id, pr)));
+      previousPRMap = newPRMap;
 
-      // if we are supressing pr notifications, the notification conditional will fail
-      if (hidePRNotifications) {
-        pullRequestCount = newPRCount;
+      let newPrs = getNewPullRequests(newPRMap, currentPRMap);
+
+      if (newPrs.length) {
+        sendNewPullRequestNotification(newPrs, isPageVisible);
+      } else {
+        currentPRMap = newPRMap;
       }
 
-      if (newPRCount > pullRequestCount) {
-        let diff = newPRCount - pullRequestCount;
-        let requestWord = diff > 1 ? 'requests' : 'request';
-        sendNotification(`[OctoShelf] : ${diff} new pull ${requestWord}`);
-      } else {
-        pullRequestCount = newPRCount;
+      if (isPageVisible) {
+        currentPRMap = newPRMap;
       }
     });
 }
@@ -277,13 +310,16 @@ function parsedPostMessage(messageType, postData) {
 
 /**
  * If Notifications are permitted, send out a notification.
- * @param {String} notifyText - notification
+ * @param {String} notifyTitle - notification title
+ * @param {String} body - notification body
  */
-function sendNotification(notifyText) {
+function sendNotification(notifyTitle, body) {
   let {permission} = Notification;
   let permissionMap = {
     granted() {
-      let notification = new Notification(notifyText);
+      let notification = new Notification(notifyTitle, {
+        body
+      });
       setTimeout(notification.close.bind(notification), 5000);
     },
     denied() {
@@ -301,12 +337,8 @@ function sendNotification(notifyText) {
  * @param {Boolean} isVisible - is the user currently looking at OctoShelf
  */
 function pageVisibilityChanged(isVisible) {
-  hidePRNotifications = isVisible;
-
-  // If the user tabs back into focus, reset the pull request counts
-  if (isVisible) {
-    pullRequestCount = latestPRCount;
-  }
+  isPageVisible = isVisible;
+  currentPRMap = previousPRMap;
 }
 
 /**
