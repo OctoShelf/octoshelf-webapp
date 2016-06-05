@@ -91,13 +91,13 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
       }, 60, window.innerHeight, window.innerWidth);
     });
     repoSection.addEventListener('click', function(event) {
-      let {action, id} = event.target && event.target.dataset;
+      let {action, url} = event.target && event.target.dataset;
       let actionMap = {
         refresh() {
-          parsedPostMessage('getRepoDetailsById', id);
+          parsedPostMessage('getRepoDetailsByUrl', url);
         },
         remove() {
-          parsedPostMessage('removeRepo', id);
+          parsedPostMessage('removeRepo', url);
         }
       };
 
@@ -132,10 +132,11 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
     let size = bubbleSize;
     let dims = ['height', 'width'].map(prop => prop + `:${size}px`).join(';');
     let pos = `top:${top}px;left:${left}px;`;
-    let cssRule = `transition: all .5s ease;${pos};${dims}`;
+    let wrapRule = `transition: all .5s ease;${pos};${dims}`;
+    let wrapSelector = '.app-prompt, .app-repositoriesWrapper';
     let afterRule = `top: ${size - 1}px;height:${size}px`;
 
-    stylesheetHelper.sheet.insertRule(`.app-prompt, .app-repositoriesWrapper {${cssRule}}`, 0);
+    stylesheetHelper.sheet.insertRule(`${wrapSelector} {${wrapRule}}`, 0);
     stylesheetHelper.sheet.insertRule(`.bubble {${dims}}`, 0);
     stylesheetHelper.sheet.insertRule(`.repository:after {${afterRule}}`, 0);
   }
@@ -195,17 +196,21 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
     title.setAttribute('class', 'repo-title');
 
     let actionsElement = document.createElement('div');
+    let repoLink = document.createElement('a');
     let sync = document.createElement('a');
     let trash = document.createElement('a');
+    let href = `${initGithubUrl}${url}`;
     let actions = [
+      {elem: repoLink, action: '', className: 'repo', href},
       {elem: sync, action: 'refresh', className: 'sync'},
       {elem: trash, action: 'remove', className: 'x'}
     ];
-    actions.forEach(({elem, action, className}) => {
-      elem.setAttribute('href', '#');
+    actions.forEach(({elem, action, className, href}) => {
+      elem.setAttribute('href', href || '#');
+      elem.setAttribute('target', 'blank');
       elem.setAttribute('data-action', action);
       elem.setAttribute('class', `octicon octicon-${className} action`);
-      elem.setAttribute('data-id', '');
+      elem.setAttribute('data-url', url);
     });
 
     let prListItems = document.createElement('ul');
@@ -382,7 +387,7 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
     let parsedParams = JSON.parse(params);
     let postData = parsedParams.postData;
     if (msgType !== 'log') {
-      log(`"${msgType}" called with:`, postData);
+      log(`[OctoShelf] "${msgType}" called with:`, postData);
     }
     fn(postData);
   }

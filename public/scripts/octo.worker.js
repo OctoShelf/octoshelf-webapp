@@ -10,7 +10,6 @@
 
 'use strict';
 let repositories = [];
-const repositoriesSet = new Set();
 const repositoriesMap = new Map();
 let apiUrl = '';
 let githubUrl = '';
@@ -80,7 +79,7 @@ function simplifyPR({id, title, html_url: url}) {
  * @return {Promise} repoDetails - repo's details and open prs
  */
 function addRepo(url) {
-  if (repositoriesSet.has(url)) {
+  if (repositoriesMap.has(url)) {
     parsedPostMessage('notify', 'That repo was already added');
     return;
   }
@@ -91,7 +90,7 @@ function addRepo(url) {
   });
 
   repositories.push(newRepository);
-  repositoriesSet.add(url);
+  repositoriesMap.set(url, repository);
 
   parsedPostMessage('drawPlaceholderRepo', newRepository);
   return getRepoDetails(newRepository);
@@ -99,13 +98,11 @@ function addRepo(url) {
 
 /**
  * Remove the repo from the dom
- * @param {String} id - id of the repo we are removing
+ * @param {String} url - url of the repo we are removing
  */
-function removeRepo(id) {
-  let {url} = repositoriesMap.get(String(id));
-  repositoriesSet.delete(url);
-  repositoriesMap.delete(id);
-  repositories = repositories.filter(repo => repo.id !== id);
+function removeRepo(url) {
+  repositoriesMap.delete(url);
+  repositories = repositories.filter(repo => repo.url !== url);
   parsedPostMessage('removeRepository', url);
 }
 
@@ -174,8 +171,7 @@ function getRepoDetails(repository) {
         repository.prs = repoPulls.map(simplifyPR);
       })
       .catch(() => {
-        repositoriesSet.delete(url);
-        parsedPostMessage('removeRepository', url);
+        removeRepo(url);
         parsedPostMessage('notify', 'Invalid Url');
         repoStillOnDom = false;
       })
@@ -195,12 +191,9 @@ function getRepoDetails(repository) {
       repository.fullName = full_name;
       repository.prs = repoPulls.map(simplifyPR);
       repository.fetchedDetails = true;
-
-      repositoriesMap.set(String(id), repository);
     })
     .catch(() => {
-      repositoriesSet.delete(url);
-      parsedPostMessage('removeRepository', url);
+      removeRepo(url);
       parsedPostMessage('notify', 'Invalid Url');
       repoStillOnDom = false;
     })
@@ -223,11 +216,11 @@ function getAllRepoDetails() {
 }
 
 /**
- * Given an id, call the getRepoDetails function
- * @param {String} id - id of a repo
+ * Given a url, call the getRepoDetails function
+ * @param {String} url - url of a repo
  */
-function getRepoDetailsById(id) {
-  let repository = repositoriesMap.get(id);
+function getRepoDetailsByUrl(url) {
+  let repository = repositoriesMap.get(url);
   getRepoDetails(repository);
 }
 
@@ -240,7 +233,7 @@ function getRepoDetailsById(id) {
 function unwrapPostMessage(fn, msgType, params) {
   let parsedParams = JSON.parse(params);
   let postData = parsedParams.postData;
-  log(`"${msgType}" called with:`, postData);
+  log(`[Worker] "${msgType}" called with:`, postData);
   fn(postData);
 }
 
@@ -278,7 +271,7 @@ function initAPIVariables({initAccessToken, initApiUrl, initGithubUrl}) {
  * @return {Object} state
  */
 function getWorkerState() {
-  return {repositories, repositoriesSet, repositoriesMap, accessToken};
+  return {repositories, repositoriesMap, accessToken};
 }
 
 self.addEventListener('message', function({data: [msgType, msgData]}) {
@@ -287,7 +280,7 @@ self.addEventListener('message', function({data: [msgType, msgData]}) {
     stopRefreshing,
     getRepoDetails,
     getAllRepoDetails,
-    getRepoDetailsById,
+    getRepoDetailsByUrl,
     setAccessToken,
     initAPIVariables,
     removeRepo,
@@ -317,7 +310,7 @@ try {
       fetchRepo,
       getRepoDetails,
       getAllRepoDetails,
-      getRepoDetailsById
+      getRepoDetailsByUrl
     };
   }
 } catch (e) {

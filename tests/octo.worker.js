@@ -16,29 +16,6 @@ test.beforeEach(t => {
     addEventListener: () => {},
     postMessage: () => {}
   };
-  worker = require(workerPath);
-});
-
-test.afterEach(t => {
-  delete require.cache[require.resolve(workerPath)];
-  global.fetch = originalFetch;
-});
-
-
-test('web worker addRepo', t => {
-
-  let state = worker.getWorkerState();
-  t.is(state.repositories.length, 0);
-  t.is(state.repositoriesSet.has('test'), false);
-
-  worker.addRepo('test');
-  state = worker.getWorkerState();
-  t.is(state.repositories.length, 1);
-  t.is(state.repositoriesSet.has('test'), true);
-});
-
-test('web worker removeRepo', t => {
-
   // Mock out fetch
   global.fetch = function(url) {
     let fakeFetchResponse = {
@@ -57,6 +34,28 @@ test('web worker removeRepo', t => {
     };
     return Promise.resolve(fakeFetchResponse);
   };
+  worker = require(workerPath);
+});
+
+test.afterEach(t => {
+  delete require.cache[require.resolve(workerPath)];
+  global.fetch = originalFetch;
+});
+
+
+test('web worker addRepo', t => {
+
+  let state = worker.getWorkerState();
+  t.is(state.repositories.length, 0);
+  t.is(state.repositoriesMap.has('test'), false);
+
+  worker.addRepo('test');
+  state = worker.getWorkerState();
+  t.is(state.repositories.length, 1);
+  t.is(state.repositoriesMap.has('test'), true);
+});
+
+test('web worker removeRepo', t => {
 
   return worker.addRepo('test').then(() => {
     worker.addRepo('test2').then(() => {
@@ -65,12 +64,11 @@ test('web worker removeRepo', t => {
         let state = worker.getWorkerState();
         t.is(state.repositories.length, 3);
 
-        let repoToRemove = state.repositories[1].id;
+        let repoToRemove = state.repositories[1].url;
         worker.removeRepo(repoToRemove);
         state = worker.getWorkerState();
         t.is(state.repositories.length, 2);
-        t.is(state.repositoriesSet.has('test2'), false);
-
+        t.is(state.repositoriesMap.has('test2'), false);
       })
     });
   });

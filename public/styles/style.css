@@ -52,6 +52,7 @@ a{ color: #fff}
 .prListItem:hover .prMoreInfo {display: inline}
 .repo-title {display: inline-block;text-overflow: ellipsis;width: 150px;overflow: hidden}
 .action {vertical-align: text-top;margin: 5px}
+.action:hover {text-shadow: 0 0 10px #fff}
 
 /* Magical overrides */
 .prList.lotsOfPRs .prListItem {height: 15px;width: 15px;margin: 1px;}
