@@ -15,6 +15,10 @@ let apiUrl = '';
 let githubUrl = '';
 let accessToken = '';
 
+let latestPRCount = 0;
+let pullRequestCount = 0;
+let hidePRNotifications = false;
+
 const repository = {
   url: '',
   placeholderUpdated: false,
@@ -180,6 +184,7 @@ function getRepoDetails(repository) {
           parsedPostMessage('updateRepository', repository);
           parsedPostMessage('toggleLoadingRepository', [id, url, false]);
         }
+        return repository;
       });
   }
 
@@ -202,6 +207,7 @@ function getRepoDetails(repository) {
         parsedPostMessage('updateRepository', repository);
         parsedPostMessage('toggleLoadingRepository', [id, url, false]);
       }
+      return repository;
     });
 }
 
@@ -210,9 +216,25 @@ function getRepoDetails(repository) {
  * (which in turn updates the DOM with each of them)
  */
 function getAllRepoDetails() {
-  repositories.forEach(repository => {
-    getRepoDetails(repository);
-  });
+  let allRepos = repositories.map(repository => getRepoDetails(repository));
+  Promise.all(allRepos)
+    .then(repos => {
+      let newPRCount = repos.reduce((m, repo) => m + repo.prs.length, 0);
+      latestPRCount = newPRCount;
+
+      // if we are supressing pr notifications, the notification conditional will fail
+      if (hidePRNotifications) {
+        pullRequestCount = newPRCount;
+      }
+
+      if (newPRCount > pullRequestCount) {
+        let diff = newPRCount - pullRequestCount;
+        let requestWord = diff > 1 ? 'requests' : 'request';
+        sendNotification(`[OctoShelf] : ${diff} new pull ${requestWord}`);
+      } else {
+        pullRequestCount = newPRCount;
+      }
+    });
 }
 
 /**
@@ -254,6 +276,40 @@ function parsedPostMessage(messageType, postData) {
 }
 
 /**
+ * If Notifications are permitted, send out a notification.
+ * @param {String} notifyText - notification
+ */
+function sendNotification(notifyText) {
+  let {permission} = Notification;
+  let permissionMap = {
+    granted() {
+      let notification = new Notification(notifyText);
+      setTimeout(notification.close.bind(notification), 5000);
+    },
+    denied() {
+      // no-op
+    }
+  };
+
+  if (permissionMap[permission]) {
+    permissionMap[permission]();
+  }
+}
+
+/**
+ * The user has tabbed in/out of OctoShelf, toggle notifications
+ * @param {Boolean} isVisible - is the user currently looking at OctoShelf
+ */
+function pageVisibilityChanged(isVisible) {
+  hidePRNotifications = isVisible;
+
+  // If the user tabs back into focus, reset the pull request counts
+  if (isVisible) {
+    pullRequestCount = latestPRCount;
+  }
+}
+
+/**
  * Init a bunch of api variables so we can access github's api
  * @param {String} initAccessToken - github access token
  * @param {String} initApiUrl - github api url, which differs for corp accounts
@@ -283,6 +339,7 @@ self.addEventListener('message', function({data: [msgType, msgData]}) {
     getRepoDetailsByUrl,
     setAccessToken,
     initAPIVariables,
+    pageVisibilityChanged,
     removeRepo,
     addRepo
   };

@@ -22,6 +22,7 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
   const notifications = document.getElementById('notifications');
   const refreshRateIcon = document.getElementById('refreshRateIcon');
   const refreshRateOptions = document.getElementById('refreshRateOptions');
+  const requestNotifications = document.getElementById('requestNotifications');
 
   const stylesheetHelper = document.createElement("style");
   const inputWrapperSize = 130;
@@ -81,15 +82,6 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
       event.preventDefault();
       parsedPostMessage('getAllRepoDetails');
     });
-    window.addEventListener('resize', function() {
-      if (resizeDebounce) {
-        clearTimeout(resizeDebounce);
-      }
-
-      resizeDebounce = setTimeout(function(innerHeight, innerWidth) {
-        updateBubbleStyles(innerHeight, innerWidth);
-      }, 60, window.innerHeight, window.innerWidth);
-    });
     repoSection.addEventListener('click', function(event) {
       let {action, url} = event.target && event.target.dataset;
       let actionMap = {
@@ -114,6 +106,31 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
       }
       return stopRefreshing();
     });
+    requestNotifications.addEventListener('click', function(event) {
+      event.preventDefault();
+      requestNotifcations();
+    });
+
+    window.addEventListener('resize', function() {
+      if (resizeDebounce) {
+        clearTimeout(resizeDebounce);
+      }
+
+      resizeDebounce = setTimeout(function(innerHeight, innerWidth) {
+        updateBubbleStyles(innerHeight, innerWidth);
+      }, 60, window.innerHeight, window.innerWidth);
+    });
+    window.addEventListener("visibilitychange", function() {
+      let isVisible = document.visibilityState !== 'hidden';
+      parsedPostMessage('pageVisibilityChanged', isVisible);
+    });
+  }
+
+  /**
+   * Request Notification Privileges from the end user
+   */
+  function requestNotifcations() {
+    Notification.requestPermission();
   }
 
   /**

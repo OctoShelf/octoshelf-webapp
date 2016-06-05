@@ -18,8 +18,9 @@ or you can fork and hack this project to meet your own use cases.
 With OctoShelf you can...
 
 * Review the open pull requests of many repos at once
-* Add / Remove Repositories
+* Add / Remove Repositories to localstorage
 * Check for new pull requests
+* Receive notifications when tabbed away
 * Point API calls to an enterprise account
 
 ## Running the App
