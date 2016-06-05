@@ -9,8 +9,8 @@
  */
 
 'use strict';
+let ports = [];
 let repositories = [];
-const repositoriesMap = new Map();
 let apiUrl = '';
 let githubUrl = '';
 let accessToken = '';
@@ -79,7 +79,7 @@ function simplifyPR({id, title, html_url: url}) {
  * @return {Promise} repoDetails - repo's details and open prs
  */
 function addRepo(url) {
-  if (repositoriesMap.has(url)) {
+  if (repositories.some(repo => repo.url === url)) {
     parsedPostMessage('notify', 'That repo was already added');
     return;
   }
@@ -90,10 +90,22 @@ function addRepo(url) {
   });
 
   repositories.push(newRepository);
-  repositoriesMap.set(url, repository);
 
   parsedPostMessage('drawPlaceholderRepo', newRepository);
   return getRepoDetails(newRepository);
+}
+
+/**
+ * Attempt to add a repo via localstorage, but silently fail if it already
+ * exists. We will be doing a full refresh on page load to sort through
+ * the differences anyhow.
+ *
+ * @param {String} url - repo url
+ */
+function addRepoFromLocalStorage(url) {
+  if (!repositories.some(repo => repo.url === url)) {
+    addRepo(url);
+  }
 }
 
 /**
@@ -101,7 +113,6 @@ function addRepo(url) {
  * @param {String} url - url of the repo we are removing
  */
 function removeRepo(url) {
-  repositoriesMap.delete(url);
   repositories = repositories.filter(repo => repo.url !== url);
   parsedPostMessage('removeRepository', url);
 }
@@ -216,11 +227,20 @@ function getAllRepoDetails() {
 }
 
 /**
+ * Get all the repoDetails, but without making any Github api calls
+ */
+function getAllCachedRepoDetails() {
+  repositories.forEach(repository => {
+    parsedPostMessage('updateRepository', repository);
+  });
+}
+
+/**
  * Given a url, call the getRepoDetails function
  * @param {String} url - url of a repo
  */
 function getRepoDetailsByUrl(url) {
-  let repository = repositoriesMap.get(url);
+  let repository = repositories.find(repo => repo.url === url);
   getRepoDetails(repository);
 }
 
@@ -229,11 +249,12 @@ function getRepoDetailsByUrl(url) {
  * @param {Function} fn - function to call
  * @param {Function} msgType - function name
  * @param {String} params - Stringified object that contains a postData prop
+ * @param {Number} portNumber - shared worker port number
  */
-function unwrapPostMessage(fn, msgType, params) {
+function unwrapPostMessage(fn, msgType, params, portNumber) {
   let parsedParams = JSON.parse(params);
   let postData = parsedParams.postData;
-  log(`[Worker] "${msgType}" called with:`, postData);
+  log(`[Worker ${portNumber}] "${msgType}" called with:`, postData);
   fn(postData);
 }
 
@@ -242,15 +263,6 @@ function unwrapPostMessage(fn, msgType, params) {
  */
 function log() {
   parsedPostMessage('log', [...arguments]);
-}
-
-/**
- * Send a Parsed Post Message
- * @param {String} messageType - function we will attempt to call
- * @param {*} postData - Some data that we will wrap into a stringified object
- */
-function parsedPostMessage(messageType, postData) {
-  self.postMessage([messageType, JSON.stringify({postData})]);
 }
 
 /**
@@ -271,27 +283,51 @@ function initAPIVariables({initAccessToken, initApiUrl, initGithubUrl}) {
  * @return {Object} state
  */
 function getWorkerState() {
-  return {repositories, repositoriesMap, accessToken};
+  return {repositories, accessToken};
 }
 
-self.addEventListener('message', function({data: [msgType, msgData]}) {
-  let msgTypes = {
-    startRefreshing,
-    stopRefreshing,
-    getRepoDetails,
-    getAllRepoDetails,
-    getRepoDetailsByUrl,
-    setAccessToken,
-    initAPIVariables,
-    removeRepo,
-    addRepo
-  };
+/**
+ * Send a Parsed Post Message
+ * @param {String} messageType - function we will attempt to call
+ * @param {*} postData - Some data that we will wrap into a stringified object
+ */
+function parsedPostMessage(messageType, postData) {
+  ports.forEach(port => {
+    port.postMessage([messageType, JSON.stringify({postData})]);
+  });
+}
 
-  if (msgTypes[msgType]) {
-    return unwrapPostMessage(msgTypes[msgType], msgType, msgData);
-  }
-  log(`"${msgType}" isn't part of the allowed functions`);
-});
+/**
+ * Init the shared worker!
+ * @param {Event} e - connection event
+ */
+self.onconnect = function(e) {
+  let port = e.ports[0];
+  let portNumber = (ports.push(port));
+
+  port.addEventListener('message', function({data: [msgType, msgData]}) {
+    let msgTypes = {
+      startRefreshing,
+      stopRefreshing,
+      getRepoDetails,
+      getAllRepoDetails,
+      getAllCachedRepoDetails,
+      getRepoDetailsByUrl,
+      setAccessToken,
+      initAPIVariables,
+      removeRepo,
+      addRepoFromLocalStorage,
+      addRepo
+    };
+
+    if (msgTypes[msgType]) {
+      return unwrapPostMessage(msgTypes[msgType], msgType, msgData, portNumber);
+    }
+    log(`"${msgType}" isn't part of the allowed functions`);
+  });
+
+  port.start();
+};
 
 // Exposing functions for avajs tests, only if module.exports is available
 try {
