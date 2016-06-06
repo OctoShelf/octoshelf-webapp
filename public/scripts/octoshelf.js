@@ -15,9 +15,11 @@ function OctoShelf(options) {
   const initAccessToken = options.initAccessToken;
   const initApiUrl = options.initApiUrl || 'https://api.github.com';
   const initGithubUrl = options.initGithubUrl || 'https://github.com/';
+  const origin = options.origin || 'http://www.octoshelf.com';
 
   const appWorker = new Worker('./scripts/octo.worker.js');
   const repoSection = document.getElementById('repoSection');
+  const authStatus = document.getElementById('authStatus');
   const syncAll = document.getElementById('syncAll');
   const addRepoForm = document.getElementById('addRepoForm');
   const addRepoInput = document.getElementById('addRepoInput');
@@ -80,6 +82,28 @@ function OctoShelf(options) {
         addRepoInput.value = addRepoInput.value.replace(initGithubUrl, '');
       }
     });
+    if (authStatus) {
+      authStatus.addEventListener('click', function(event) {
+        event.preventDefault();
+        let {href} = event.target;
+        let authWindow = window.open(href, '', '');
+        let timeout = setInterval(function() {
+          authWindow.postMessage('fetchToken', origin);
+        }, 500);
+
+        window.addEventListener('message', function(event) {
+          if (event.origin !== origin) {
+            return;
+          }
+
+          let token = event.data;
+          parsedPostMessage('setAccessToken', token);
+          authStatus.parentNode.removeChild(authStatus);
+          clearTimeout(timeout);
+          event.source.close();
+        });
+      });
+    }
     syncAll.addEventListener('click', function(event) {
       event.preventDefault();
       parsedPostMessage('getAllRepoDetails');
