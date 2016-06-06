@@ -9,11 +9,13 @@
  * if you are intending to access an enterprise github's api, you will need to
  * use a public access token generated from your corp's settings.
  *
- * @param {String} initAccessToken - github access token, optional but recommended
- * @param {String} initApiUrl - github api url, which differs for corp accounts
- * @param {String} initGithubUrl - github root url
+ * @param {Object} options - OctoShelf options
  */
-function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', initGithubUrl = 'https://github.com/'}) {
+function OctoShelf(options) {
+  const initAccessToken = options.initAccessToken;
+  const initApiUrl = options.initApiUrl || 'https://api.github.com';
+  const initGithubUrl = options.initGithubUrl || 'https://github.com/';
+
   const appWorker = new Worker('./scripts/octo.worker.js');
   const repoSection = document.getElementById('repoSection');
   const syncAll = document.getElementById('syncAll');
@@ -143,8 +145,12 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
     let top = (innerHeight / 2) - bubbleModify;
     let left = (innerWidth / 2) - bubbleModify;
 
-    while (stylesheetHelper.sheet.rules.length) {
-      stylesheetHelper.sheet.removeRule(0);
+    while (stylesheetHelper.sheet.cssRules.length) {
+      if (stylesheetHelper.sheet.removeRule) {
+        stylesheetHelper.sheet.removeRule(0);
+      } else if (stylesheetHelper.sheet.deleteRule) {
+        stylesheetHelper.sheet.deleteRule(0);
+      }
     }
     let size = bubbleSize;
     let dims = ['height', 'width'].map(prop => prop + `:${size}px`).join(';');
@@ -282,7 +288,11 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
       }
 
       let actions = article.querySelectorAll('[data-action]');
-      actions.forEach(action => action.setAttribute('data-id', id));
+      let actionSize = actions.length;
+      for (let index = 0; index < actionSize; index++) {
+        let action = actions[index];
+        action.setAttribute('data-id', id);
+      }
 
       // Swap out the title with a better one
       let repoTitle = article.querySelector('.repo-title');

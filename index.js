@@ -35,17 +35,18 @@ app.engine('ejs', ejs.renderFile);
 app.get('/', function (req, res) {
   let query = req.query;
   let code = query.code || '';
+  let localGithubApi = Object.assign({}, githubApi);
   if (code) {
     let payload = Object.assign({}, tokenPayload, { code });
     let opts = Object.assign({}, requestAccessTokenOptions, { body: payload});
     return request(opts, function (error, response, body) {
       if (!error && response.statusCode == 200) {
-        githubApi.accessToken = body.access_token;
+        localGithubApi.accessToken = body.access_token;
       }
-      res.render('index.ejs', githubApi);
+      res.render('index.ejs', localGithubApi);
     });
   }
-  res.render('index.ejs', githubApi);
+  res.render('index.ejs', localGithubApi);
 });
 
 let port = process.env.PORT || 5000;
