@@ -10,7 +10,6 @@
 
 'use strict';
 let repositories = [];
-const repositoriesMap = new Map();
 let apiUrl = '';
 let githubUrl = '';
 let accessToken = '';
@@ -83,7 +82,7 @@ function simplifyPR({id, title, html_url: url}) {
  * @return {Promise} repoDetails - repo's details and open prs
  */
 function addRepo(url) {
-  if (repositoriesMap.has(url)) {
+  if (repositories.find(repo => repo.url === url)) {
     parsedPostMessage('notify', 'That repo was already added');
     return;
   }
@@ -94,7 +93,6 @@ function addRepo(url) {
   });
 
   repositories.push(newRepository);
-  repositoriesMap.set(url, repository);
 
   parsedPostMessage('drawPlaceholderRepo', newRepository);
   return getRepoDetails(newRepository);
@@ -105,7 +103,6 @@ function addRepo(url) {
  * @param {String} url - url of the repo we are removing
  */
 function removeRepo(url) {
-  repositoriesMap.delete(url);
   repositories = repositories.filter(repo => repo.url !== url);
   parsedPostMessage('removeRepository', url);
 }
@@ -150,8 +147,8 @@ function fetchRepoPulls(repoUrl) {
  */
 function fetchRepo(repoUrl) {
   return Promise.all([fetchRepoDetails(repoUrl), fetchRepoPulls(repoUrl)])
-    .then(([repoDetails, repoPulls]) => {
-      return Promise.all([repoDetails.json(), repoPulls.json()]);
+    .then(([repoDetails, prs]) => {
+      return Promise.all([repoDetails.json(), prs.json()]);
     });
 }
 
@@ -170,9 +167,9 @@ function getRepoDetails(repository) {
   if (fetchedDetails) {
     parsedPostMessage('toggleLoadingRepository', [id, url, true]);
     return fetchRepoPulls(repoUrl)
-      .then(repoPulls => repoPulls.json())
-      .then(repoPulls => {
-        repository.prs = repoPulls.map(simplifyPR);
+      .then(prs => prs.json())
+      .then(prs => {
+        repository.prs = prs.map(simplifyPR);
       })
       .catch(() => {
         removeRepo(url);
@@ -189,12 +186,16 @@ function getRepoDetails(repository) {
   }
 
   return fetchRepo(repoUrl)
-    .then(([{id, name, full_name}, repoPulls]) => {
+    .then(([{id, name, full_name}, prs]) => {
       /* eslint camelcase:0 */
+      let simplePrs = prs.map(simplifyPR);
+      simplePrs.forEach(pr => {
+        currentPRMap.set(pr.id, pr);
+      });
       repository.id = id;
       repository.name = name;
       repository.fullName = full_name;
-      repository.prs = repoPulls.map(simplifyPR);
+      repository.prs = simplePrs;
       repository.fetchedDetails = true;
     })
     .catch(() => {
@@ -245,6 +246,18 @@ function sendNewPullRequestNotification(pullRequests, isPageVisible) {
 }
 
 /**
+ * Pull out the ids from the pull request, and toss them to over to OctoShelf
+ * @param {Array} pullRequests - array of new pull requests
+ * @param {Boolean} isPageVisible - we only want to animate on active pages
+ */
+function animateNewPullRequests(pullRequests, isPageVisible) {
+  if (isPageVisible) {
+    let ids = pullRequests.map(pr => pr.id);
+    parsedPostMessage('animateNewPullRequests', ids);
+  }
+}
+
+/**
  * Foreach through all the repos, getting details for each of them
  * (which in turn updates the DOM with each of them)
  */
@@ -257,9 +270,13 @@ function getAllRepoDetails() {
       previousPRMap = newPRMap;
 
       let newPrs = getNewPullRequests(newPRMap, currentPRMap);
+      let updateFns = [
+        sendNewPullRequestNotification,
+        animateNewPullRequests
+      ];
 
       if (newPrs.length) {
-        sendNewPullRequestNotification(newPrs, isPageVisible);
+        updateFns.forEach(fn => fn(newPrs, isPageVisible));
       } else {
         currentPRMap = newPRMap;
       }
@@ -275,8 +292,10 @@ function getAllRepoDetails() {
  * @param {String} url - url of a repo
  */
 function getRepoDetailsByUrl(url) {
-  let repository = repositoriesMap.get(url);
-  getRepoDetails(repository);
+  let repository = repositories.find(repo => repo.url === url);
+  if (repository) {
+    getRepoDetails(repository);
+  }
 }
 
 /**
@@ -359,7 +378,7 @@ function initAPIVariables({initAccessToken, initApiUrl, initGithubUrl}) {
  * @return {Object} state
  */
 function getWorkerState() {
-  return {repositories, repositoriesMap, accessToken};
+  return {repositories, accessToken};
 }
 
 self.addEventListener('message', function({data: [msgType, msgData]}) {

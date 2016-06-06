@@ -47,12 +47,12 @@ test('web worker addRepo', t => {
 
   let state = worker.getWorkerState();
   t.is(state.repositories.length, 0);
-  t.is(state.repositoriesMap.has('test'), false);
+  t.is(state.repositories.find(repo => repo.url ==='test') !== undefined, false);
 
   worker.addRepo('test');
   state = worker.getWorkerState();
   t.is(state.repositories.length, 1);
-  t.is(state.repositoriesMap.has('test'), true);
+  t.is(state.repositories.find(repo => repo.url ==='test') !== undefined, true);
 });
 
 test('web worker removeRepo', t => {
@@ -63,12 +63,13 @@ test('web worker removeRepo', t => {
 
         let state = worker.getWorkerState();
         t.is(state.repositories.length, 3);
+        t.is(state.repositories.find(repo => repo.url ==='test2') === undefined, false);
 
         let repoToRemove = state.repositories[1].url;
         worker.removeRepo(repoToRemove);
         state = worker.getWorkerState();
         t.is(state.repositories.length, 2);
-        t.is(state.repositoriesMap.has('test2'), false);
+        t.is(state.repositories.find(repo => repo.url ==='test2') === undefined, true);
       })
     });
   });

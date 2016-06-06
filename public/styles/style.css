@@ -15,10 +15,12 @@ a{ color: #fff}
     display: inline-block;
     margin: 5px;
     text-align: center;
+    transition: all 3s ease;
 
     height: 27px;
     width: 27px;
 }
+.prListItem.newPullRequest {background: yellow}
 .prLink {color: #000;padding: 5px;position: relative;vertical-align: middle}
 .prLink:visited {color: #c0c}
 .prMoreInfo {

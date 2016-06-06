@@ -20,12 +20,12 @@
             <div>
                 <a href="#" id="syncAll" class="octicon octicon-sync"></a>
                 <% if(!accessToken) { %>
-                <a href="<%= githubAuthUrl %>" id="authStatus" class="octicon octicon-alert tokenNeeded-anchor">
-                            <span class="tokenNeeded-content">
-                                You are absolutely free to use this app without authenticating,
-                                however GitHub ratelimits api calls of token-less users.
-                            </span>
-                </a>
+                    <a href="<%= githubAuthUrl %>" id="authStatus" class="octicon octicon-alert tokenNeeded-anchor">
+                        <span class="tokenNeeded-content">
+                            You are absolutely free to use this app without authenticating,
+                            however GitHub ratelimits api calls of token-less users.
+                        </span>
+                    </a>
                 <% } %>
             </div>
         </form>

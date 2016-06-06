@@ -353,6 +353,23 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
   }
 
   /**
+   * Given an array of pull request ids, add a "newPullRequest" class and remove it
+   * @param {Array} ids - array of pull request ids
+   */
+  function animateNewPullRequests(ids) {
+    ids.forEach(id => {
+      let element = document.getElementById(id);
+      if (!element) {
+        return;
+      }
+      element.classList.add('newPullRequest');
+      setTimeout(() => {
+        element.classList.remove('newPullRequest');
+      }, 1000);
+    });
+  }
+
+  /**
    * Update the rotation of the different repo bubbles
    */
   function updateRotations() {
@@ -478,6 +495,7 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
       notify,
       hasRefreshed,
       drawPlaceholderRepo,
+      animateNewPullRequests,
       updateRepository,
       removeRepository,
       toggleLoadingRepository
