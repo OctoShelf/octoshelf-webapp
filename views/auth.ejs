@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<link>
+<head>
+    <script>
+        window.addEventListener('message',function(event) {
+            let origin = event.origin;
+            if (event.origin !== '<%= origin %>') {
+                return;
+            }
+            event.source.postMessage('<%= accessToken %>', event.origin);
+        },false);
+    </script>
+</head>
+<body>
+</body>
+</html>

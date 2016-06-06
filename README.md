@@ -18,8 +18,9 @@ or you can fork and hack this project to meet your own use cases.
 With OctoShelf you can...
 
 * Review the open pull requests of many repos at once
-* Add / Remove Repositories
+* Add / Remove Repositories to localstorage
 * Check for new pull requests
+* Receive notifications when tabbed away
 * Point API calls to an enterprise account
 
 ## Running the App
@@ -49,7 +50,7 @@ the following variables inside `config/githubApi.json`:
 You'll notice you have limited capabilities, and may hit Github's ratelimit rather quickly.
 To "fix" this, you have two options:
 
-* [Generate a public access token](https://github.com/settings/tokens/new), and fill the `accessToken` property in `githubApi.json`\
+* [Generate a public access token](https://github.com/settings/tokens/new), and fill the `accessToken` property in `githubApi.json`
 * [Register a new OAuth Token](https://github.com/settings/applications/new), and run the following:
 
 ```
@@ -62,10 +63,6 @@ For more information, check out: https://developer.github.com/v3/oauth/
 
 I welcome any and all forms of contributions. If you have a feature request, feel
 free to open a new issue, or better yet, open a new pull request yourself! :)
-
-## TODO
-
-- [ ] Allow nodes to grow and expand given enough screen size
 
 ## Potential Future Features
 

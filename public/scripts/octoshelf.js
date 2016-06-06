@@ -9,20 +9,24 @@
  * if you are intending to access an enterprise github's api, you will need to
  * use a public access token generated from your corp's settings.
  *
- * @param {String} initAccessToken - github access token, optional but recommended
- * @param {String} initApiUrl - github api url, which differs for corp accounts
- * @param {String} initGithubUrl - github root url
+ * @param {Object} options - OctoShelf options
  */
-function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', initGithubUrl = 'https://github.com/'}) {
-  const appWorker = new SharedWorker('/scripts/octo.worker.js');
+function OctoShelf(options) {
+  const initAccessToken = options.initAccessToken;
+  const initApiUrl = options.initApiUrl || 'https://api.github.com';
+  const initGithubUrl = options.initGithubUrl || 'https://github.com/';
+  const origin = options.origin || 'http://www.octoshelf.com';
 
+  const appWorker = new Worker('./scripts/octo.worker.js');
   const repoSection = document.getElementById('repoSection');
+  const authStatus = document.getElementById('authStatus');
   const syncAll = document.getElementById('syncAll');
   const addRepoForm = document.getElementById('addRepoForm');
   const addRepoInput = document.getElementById('addRepoInput');
   const notifications = document.getElementById('notifications');
   const refreshRateIcon = document.getElementById('refreshRateIcon');
   const refreshRateOptions = document.getElementById('refreshRateOptions');
+  const requestNotifications = document.getElementById('requestNotifications');
 
   const stylesheetHelper = document.createElement("style");
   const inputWrapperSize = 130;
@@ -58,7 +62,7 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
       this.repositories = JSON.parse(repoString);
       this.repositories.forEach(url => {
         this.uniqueRepos.add(url);
-        parsedPostMessage('addRepoFromLocalStorage', url);
+        addRepository(url);
       });
     }
   };
@@ -78,18 +82,31 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
         addRepoInput.value = addRepoInput.value.replace(initGithubUrl, '');
       }
     });
+    if (authStatus) {
+      authStatus.addEventListener('click', function(event) {
+        event.preventDefault();
+        let {href} = event.target;
+        let authWindow = window.open(href, '', '');
+        let timeout = setInterval(function() {
+          authWindow.postMessage('fetchToken', origin);
+        }, 500);
+
+        window.addEventListener('message', function(event) {
+          if (event.origin !== origin) {
+            return;
+          }
+
+          let token = event.data;
+          parsedPostMessage('setAccessToken', token);
+          authStatus.parentNode.removeChild(authStatus);
+          clearTimeout(timeout);
+          event.source.close();
+        });
+      });
+    }
     syncAll.addEventListener('click', function(event) {
       event.preventDefault();
       parsedPostMessage('getAllRepoDetails');
-    });
-    window.addEventListener('resize', function() {
-      if (resizeDebounce) {
-        clearTimeout(resizeDebounce);
-      }
-
-      resizeDebounce = setTimeout(function(innerHeight, innerWidth) {
-        updateBubbleStyles(innerHeight, innerWidth);
-      }, 60, window.innerHeight, window.innerWidth);
     });
     repoSection.addEventListener('click', function(event) {
       let {action, url} = event.target && event.target.dataset;
@@ -115,6 +132,31 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
       }
       return stopRefreshing();
     });
+    requestNotifications.addEventListener('click', function(event) {
+      event.preventDefault();
+      requestNotifcations();
+    });
+
+    window.addEventListener('resize', function() {
+      if (resizeDebounce) {
+        clearTimeout(resizeDebounce);
+      }
+
+      resizeDebounce = setTimeout(function(innerHeight, innerWidth) {
+        updateBubbleStyles(innerHeight, innerWidth);
+      }, 60, window.innerHeight, window.innerWidth);
+    });
+    window.addEventListener("visibilitychange", function() {
+      let isVisible = document.visibilityState !== 'hidden';
+      parsedPostMessage('pageVisibilityChanged', isVisible);
+    });
+  }
+
+  /**
+   * Request Notification Privileges from the end user
+   */
+  function requestNotifcations() {
+    Notification.requestPermission();
   }
 
   /**
@@ -127,8 +169,12 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
     let top = (innerHeight / 2) - bubbleModify;
     let left = (innerWidth / 2) - bubbleModify;
 
-    while (stylesheetHelper.sheet.rules.length) {
-      stylesheetHelper.sheet.removeRule(0);
+    while (stylesheetHelper.sheet.cssRules.length) {
+      if (stylesheetHelper.sheet.removeRule) {
+        stylesheetHelper.sheet.removeRule(0);
+      } else if (stylesheetHelper.sheet.deleteRule) {
+        stylesheetHelper.sheet.deleteRule(0);
+      }
     }
     let size = bubbleSize;
     let dims = ['height', 'width'].map(prop => prop + `:${size}px`).join(';');
@@ -165,6 +211,7 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
       document.querySelector(`[data-url="${url}"]`);
 
     if (!article) {
+      notify('Something went wrong');
       return;
     }
 
@@ -265,7 +312,11 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
       }
 
       let actions = article.querySelectorAll('[data-action]');
-      actions.forEach(action => action.setAttribute('data-id', id));
+      let actionSize = actions.length;
+      for (let index = 0; index < actionSize; index++) {
+        let action = actions[index];
+        action.setAttribute('data-id', id);
+      }
 
       // Swap out the title with a better one
       let repoTitle = article.querySelector('.repo-title');
@@ -326,12 +377,30 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
   function removeRepository(url) {
     let article = document.querySelector(`[data-url="${url}"]`);
     if (!article) {
+      notify('Something went wrong');
       return;
     }
     article.parentNode.removeChild(article);
     repoStateManager.remove(url);
 
     setTimeout(updateRotations, 100);
+  }
+
+  /**
+   * Given an array of pull request ids, add a "newPullRequest" class and remove it
+   * @param {Array} ids - array of pull request ids
+   */
+  function animateNewPullRequests(ids) {
+    ids.forEach(id => {
+      let element = document.getElementById(id);
+      if (!element) {
+        return;
+      }
+      element.classList.add('newPullRequest');
+      setTimeout(() => {
+        element.classList.remove('newPullRequest');
+      }, 1000);
+    });
   }
 
   /**
@@ -397,7 +466,7 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
    * @param {*} postData - Some data that we will wrap into a stringified object
    */
   function parsedPostMessage(messageType, postData) {
-    appWorker.port.postMessage([messageType, JSON.stringify({postData})]);
+    appWorker.postMessage([messageType, JSON.stringify({postData})]);
   }
 
   /**
@@ -454,12 +523,13 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
    * Contract: appWorker.postMessage([msgType, msgData]);
    * @type {Worker}
    */
-  appWorker.port.addEventListener('message', function({data: [msgType, msgData]}) {
+  appWorker.addEventListener('message', function({data: [msgType, msgData]}) {
     let msgTypes = {
       log,
       notify,
       hasRefreshed,
       drawPlaceholderRepo,
+      animateNewPullRequests,
       updateRepository,
       removeRepository,
       toggleLoadingRepository
@@ -491,15 +561,10 @@ function OctoShelf({initAccessToken, initApiUrl = 'https://api.github.com', init
       return notify(`Several api vars were found missing: ${missing}`, 4000);
     }
     document.head.appendChild(stylesheetHelper);
-    appWorker.port.start();
-
     initAPIVariables({initAccessToken, initApiUrl, initGithubUrl});
     updateBubbleStyles(window.innerHeight, window.innerWidth);
     resizeGitubPrefix();
     repoStateManager.fetch();
-    setTimeout(() => {
-      parsedPostMessage('getAllCachedRepoDetails');
-    }, 1);
     startRefreshing(startingRefreshRate);
     loadEventListeners();
   })();

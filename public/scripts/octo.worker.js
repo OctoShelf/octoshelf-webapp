@@ -9,11 +9,14 @@
  */
 
 'use strict';
-let ports = [];
 let repositories = [];
 let apiUrl = '';
 let githubUrl = '';
 let accessToken = '';
+
+let currentPRMap = new Map();
+let previousPRMap = new Map();
+let isPageVisible = true;
 
 const repository = {
   url: '',
@@ -79,7 +82,7 @@ function simplifyPR({id, title, html_url: url}) {
  * @return {Promise} repoDetails - repo's details and open prs
  */
 function addRepo(url) {
-  if (repositories.some(repo => repo.url === url)) {
+  if (repositories.find(repo => repo.url === url)) {
     parsedPostMessage('notify', 'That repo was already added');
     return;
   }
@@ -93,19 +96,6 @@ function addRepo(url) {
 
   parsedPostMessage('drawPlaceholderRepo', newRepository);
   return getRepoDetails(newRepository);
-}
-
-/**
- * Attempt to add a repo via localstorage, but silently fail if it already
- * exists. We will be doing a full refresh on page load to sort through
- * the differences anyhow.
- *
- * @param {String} url - repo url
- */
-function addRepoFromLocalStorage(url) {
-  if (!repositories.some(repo => repo.url === url)) {
-    addRepo(url);
-  }
 }
 
 /**
@@ -157,8 +147,8 @@ function fetchRepoPulls(repoUrl) {
  */
 function fetchRepo(repoUrl) {
   return Promise.all([fetchRepoDetails(repoUrl), fetchRepoPulls(repoUrl)])
-    .then(([repoDetails, repoPulls]) => {
-      return Promise.all([repoDetails.json(), repoPulls.json()]);
+    .then(([repoDetails, prs]) => {
+      return Promise.all([repoDetails.json(), prs.json()]);
     });
 }
 
@@ -177,9 +167,9 @@ function getRepoDetails(repository) {
   if (fetchedDetails) {
     parsedPostMessage('toggleLoadingRepository', [id, url, true]);
     return fetchRepoPulls(repoUrl)
-      .then(repoPulls => repoPulls.json())
-      .then(repoPulls => {
-        repository.prs = repoPulls.map(simplifyPR);
+      .then(prs => prs.json())
+      .then(prs => {
+        repository.prs = prs.map(simplifyPR);
       })
       .catch(() => {
         removeRepo(url);
@@ -191,16 +181,21 @@ function getRepoDetails(repository) {
           parsedPostMessage('updateRepository', repository);
           parsedPostMessage('toggleLoadingRepository', [id, url, false]);
         }
+        return repository;
       });
   }
 
   return fetchRepo(repoUrl)
-    .then(([{id, name, full_name}, repoPulls]) => {
+    .then(([{id, name, full_name}, prs]) => {
       /* eslint camelcase:0 */
+      let simplePrs = prs.map(simplifyPR);
+      simplePrs.forEach(pr => {
+        currentPRMap.set(pr.id, pr);
+      });
       repository.id = id;
       repository.name = name;
       repository.fullName = full_name;
-      repository.prs = repoPulls.map(simplifyPR);
+      repository.prs = simplePrs;
       repository.fetchedDetails = true;
     })
     .catch(() => {
@@ -213,7 +208,53 @@ function getRepoDetails(repository) {
         parsedPostMessage('updateRepository', repository);
         parsedPostMessage('toggleLoadingRepository', [id, url, false]);
       }
+      return repository;
     });
+}
+
+/**
+ * Return an array of new pull requests
+ * @param {Map} fetchedResults - current map of pull requests
+ * @param {Map} previousResults - previous map of pull requests
+ * @return {Array} new pull requests
+ */
+function getNewPullRequests(fetchedResults, previousResults) {
+  var pullRequests = [];
+  fetchedResults.forEach((pr, id) => {
+    if (!previousResults.has(id)) {
+      pullRequests.push(pr);
+    }
+  });
+  return pullRequests;
+}
+
+/**
+ * Send out a notification listing out all the new open pull requests
+ * @param {Array} pullRequests - array of new pull requests
+ * @param {Boolean} isPageVisible - toggle if we want to show the notification
+ */
+function sendNewPullRequestNotification(pullRequests, isPageVisible) {
+  if (!isPageVisible) {
+    let size = pullRequests.length;
+    let requestWord = size > 1 ? 'requests' : 'request';
+    let title = `[OctoShelf] : ${size} new pull ${requestWord}`;
+    let body = pullRequests.map(pr => {
+      return '• ' + (pr.url || '').replace(githubUrl, '');
+    }).join('\n');
+    sendNotification(title, body);
+  }
+}
+
+/**
+ * Pull out the ids from the pull request, and toss them to over to OctoShelf
+ * @param {Array} pullRequests - array of new pull requests
+ * @param {Boolean} isPageVisible - we only want to animate on active pages
+ */
+function animateNewPullRequests(pullRequests, isPageVisible) {
+  if (isPageVisible) {
+    let ids = pullRequests.map(pr => pr.id);
+    parsedPostMessage('animateNewPullRequests', ids);
+  }
 }
 
 /**
@@ -221,18 +262,29 @@ function getRepoDetails(repository) {
  * (which in turn updates the DOM with each of them)
  */
 function getAllRepoDetails() {
-  repositories.forEach(repository => {
-    getRepoDetails(repository);
-  });
-}
+  let allRepos = repositories.map(repository => getRepoDetails(repository));
+  Promise.all(allRepos)
+    .then(repos => {
+      let newPRMap = new Map();
+      repos.forEach(repo => repo.prs.forEach(pr => newPRMap.set(pr.id, pr)));
+      previousPRMap = newPRMap;
 
-/**
- * Get all the repoDetails, but without making any Github api calls
- */
-function getAllCachedRepoDetails() {
-  repositories.forEach(repository => {
-    parsedPostMessage('updateRepository', repository);
-  });
+      let newPrs = getNewPullRequests(newPRMap, currentPRMap);
+      let updateFns = [
+        sendNewPullRequestNotification,
+        animateNewPullRequests
+      ];
+
+      if (newPrs.length) {
+        updateFns.forEach(fn => fn(newPrs, isPageVisible));
+      } else {
+        currentPRMap = newPRMap;
+      }
+
+      if (isPageVisible) {
+        currentPRMap = newPRMap;
+      }
+    });
 }
 
 /**
@@ -241,7 +293,9 @@ function getAllCachedRepoDetails() {
  */
 function getRepoDetailsByUrl(url) {
   let repository = repositories.find(repo => repo.url === url);
-  getRepoDetails(repository);
+  if (repository) {
+    getRepoDetails(repository);
+  }
 }
 
 /**
@@ -249,12 +303,11 @@ function getRepoDetailsByUrl(url) {
  * @param {Function} fn - function to call
  * @param {Function} msgType - function name
  * @param {String} params - Stringified object that contains a postData prop
- * @param {Number} portNumber - shared worker port number
  */
-function unwrapPostMessage(fn, msgType, params, portNumber) {
+function unwrapPostMessage(fn, msgType, params) {
   let parsedParams = JSON.parse(params);
   let postData = parsedParams.postData;
-  log(`[Worker ${portNumber}] "${msgType}" called with:`, postData);
+  log(`[Worker] "${msgType}" called with:`, postData);
   fn(postData);
 }
 
@@ -263,6 +316,48 @@ function unwrapPostMessage(fn, msgType, params, portNumber) {
  */
 function log() {
   parsedPostMessage('log', [...arguments]);
+}
+
+/**
+ * Send a Parsed Post Message
+ * @param {String} messageType - function we will attempt to call
+ * @param {*} postData - Some data that we will wrap into a stringified object
+ */
+function parsedPostMessage(messageType, postData) {
+  self.postMessage([messageType, JSON.stringify({postData})]);
+}
+
+/**
+ * If Notifications are permitted, send out a notification.
+ * @param {String} notifyTitle - notification title
+ * @param {String} body - notification body
+ */
+function sendNotification(notifyTitle, body) {
+  let {permission} = Notification;
+  let permissionMap = {
+    granted() {
+      let notification = new Notification(notifyTitle, {
+        body
+      });
+      setTimeout(notification.close.bind(notification), 5000);
+    },
+    denied() {
+      // no-op
+    }
+  };
+
+  if (permissionMap[permission]) {
+    permissionMap[permission]();
+  }
+}
+
+/**
+ * The user has tabbed in/out of OctoShelf, toggle notifications
+ * @param {Boolean} isVisible - is the user currently looking at OctoShelf
+ */
+function pageVisibilityChanged(isVisible) {
+  isPageVisible = isVisible;
+  currentPRMap = previousPRMap;
 }
 
 /**
@@ -286,48 +381,25 @@ function getWorkerState() {
   return {repositories, accessToken};
 }
 
-/**
- * Send a Parsed Post Message
- * @param {String} messageType - function we will attempt to call
- * @param {*} postData - Some data that we will wrap into a stringified object
- */
-function parsedPostMessage(messageType, postData) {
-  ports.forEach(port => {
-    port.postMessage([messageType, JSON.stringify({postData})]);
-  });
-}
+self.addEventListener('message', function({data: [msgType, msgData]}) {
+  let msgTypes = {
+    startRefreshing,
+    stopRefreshing,
+    getRepoDetails,
+    getAllRepoDetails,
+    getRepoDetailsByUrl,
+    setAccessToken,
+    initAPIVariables,
+    pageVisibilityChanged,
+    removeRepo,
+    addRepo
+  };
 
-/**
- * Init the shared worker!
- * @param {Event} e - connection event
- */
-self.onconnect = function(e) {
-  let port = e.ports[0];
-  let portNumber = (ports.push(port));
-
-  port.addEventListener('message', function({data: [msgType, msgData]}) {
-    let msgTypes = {
-      startRefreshing,
-      stopRefreshing,
-      getRepoDetails,
-      getAllRepoDetails,
-      getAllCachedRepoDetails,
-      getRepoDetailsByUrl,
-      setAccessToken,
-      initAPIVariables,
-      removeRepo,
-      addRepoFromLocalStorage,
-      addRepo
-    };
-
-    if (msgTypes[msgType]) {
-      return unwrapPostMessage(msgTypes[msgType], msgType, msgData, portNumber);
-    }
-    log(`"${msgType}" isn't part of the allowed functions`);
-  });
-
-  port.start();
-};
+  if (msgTypes[msgType]) {
+    return unwrapPostMessage(msgTypes[msgType], msgType, msgData);
+  }
+  log(`"${msgType}" isn't part of the allowed functions`);
+});
 
 // Exposing functions for avajs tests, only if module.exports is available
 try {
