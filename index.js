@@ -9,18 +9,20 @@ let express = require('express');
 let path = require('path');
 let ejs = require('ejs');
 let request = require('request');
-let githubConfig = require('./config/githubApi.json');
+let config = require('./config/config.json');
 let session = require('express-session');
 const app = express();
 
 const github_client_id = process.env.GITHUB_CLIENT_ID || '';
 const github_client_secret = process.env.GITHUB_CLIENT_SECRET || '';
+const personal_access_token = process.env.PERSONAL_ACCESS_TOKEN || '';
+
 const tokenPayload = {
   "client_id": github_client_id,
   "client_secret": github_client_secret
 };
-const requestAccessTokenOptions = {
-  url: githubConfig.githubTokenUrl,
+const accessTokenOptions = {
+  url: config.githubTokenUrl,
   method: 'POST',
   json: true,
   headers: {
@@ -28,7 +30,7 @@ const requestAccessTokenOptions = {
   }
 };
 
-githubConfig.githubAuthUrl += '?client_id=' + github_client_id
+config.githubAuthUrl += '?client_id=' + github_client_id
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.engine('ejs', ejs.renderFile);
@@ -36,25 +38,26 @@ app.use(session({
   secret: 'super secret keyboard cat'
 }));
 
+function getAccessToken(req) {
+  return personal_access_token || req.session.accessToken || '';
+}
+
 app.get('/', function (req, res) {
   let origin = req.protocol + '://' + req.get('host');
-  let accessToken = req.session.accessToken || '';
-  let localGithubApi = Object.assign({}, githubConfig, {origin});
-  if (accessToken) {
-    localGithubApi.accessToken = accessToken;
-  }
-  res.render('index.ejs', localGithubApi);
+  let accessToken = getAccessToken(req);
+  let data = Object.assign({}, config, {origin, accessToken});
+  res.render('index.ejs', data);
 });
 
 app.get('/auth', function (req, res) {
   let origin = req.protocol + '://' + req.get('host');
   let query = req.query;
   let code = query.code || '';
-  let accessToken = req.session.accessToken || '';
-  let data = Object.assign({accessToken:''}, {origin});
+  let accessToken = getAccessToken(req);
+  let data = Object.assign({}, { accessToken, origin });
   if (code) {
-    let payload = Object.assign({}, tokenPayload, { code });
-    let opts = Object.assign({}, requestAccessTokenOptions, { body: payload});
+    let body = Object.assign({}, tokenPayload, { code });
+    let opts = Object.assign({}, accessTokenOptions, { body });
     return request(opts, function (error, response, body) {
       if (!error && response.statusCode == 200) {
         accessToken = body.access_token;

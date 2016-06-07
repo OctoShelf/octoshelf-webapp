@@ -2,18 +2,17 @@
 <html>
 <link>
 <head>
-<meta charset="utf-8">
-<meta http-equiv="x-ua-compatible" content="ie=edge">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>OctoShelf</title>
-<link rel="stylesheet" type="text/css" href="./styles/octicons.css"></link>
-<link rel="stylesheet" type="text/css" href="./styles/style.css"></link>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>OctoShelf</title>
+    <link rel="stylesheet" type="text/css" href="./styles/octicons.css"></link>
+    <link rel="stylesheet" type="text/css" href="./styles/style.css"></link>
 </head>
 <body>
-<main id="app" class="app">
+<main id="octoshelf" class="app">
     <section id="addSection" class="app-prompt">
         <form id="addRepoForm" class="bubble">
-            <h1>OctoShelf</h1>
             <div class="addRepoInput-wrapper">
                 <div class="addRepoInput-prefix"><%= githubUrl %></div>
                 <input type="text" id="addRepoInput" class="addRepoInput-input" placeholder="Repository Url" />
@@ -21,12 +20,12 @@
             <div>
                 <a href="#" id="syncAll" class="octicon octicon-sync"></a>
                 <% if(!accessToken) { %>
-                    <a href="<%= githubAuthUrl %>" id="authStatus" class="octicon octicon-alert tokenNeeded-anchor">
+                <a href="<%= githubAuthUrl %>" id="authStatus" class="octicon octicon-alert tokenNeeded-anchor">
                         <span class="tokenNeeded-content">
                             You are absolutely free to use this app without authenticating,
                             however GitHub ratelimits api calls of token-less users.
                         </span>
-                    </a>
+                </a>
                 <% } %>
             </div>
         </form>
@@ -35,13 +34,14 @@
         <section id="repoSection" class="app-repositories"></section>
     </section>
     <section id="notifications" class="notifications"></section>
-    <div class="infoPanel">
-        <span class="infoPanel-description">
-            A
+</main>
+<section class="infoPanel">
+    <section class="infoPanel-topPanel">
+        <span>
+            <h1>OctoShelf</h1><span class="tagline">, <span class="tagline-githubPowered">a
             <a href="https://github.com" class="octicon octicon-logo-github"></a>
-            powered
-            <span class="octicon octicon-git-pull-request"></span>
-            <span class="octicon octicon-dashboard"></span>
+            powered</span> pull request manager
+            </span>
         </span>
         <span class="infoPanel-actions">
             <span class="refreshRate_wrapper">
@@ -74,16 +74,50 @@
                 <a id="requestNotifications" href="#" class="octicon octicon-broadcast notification-button"></a>
                 <div class="notification-moreInfo">Allow Notifications?</div>
             </span>
-            <div class="octicon octicon-question moreInfo-wrapper" tabindex="1"></div>
-            <div class="moreInfo-content">
-                <h2>Welcome to OctoShelf!</h2>
-                This is a side-projected aimed at making it easier to manage pull requests
-                across multiple repositories. Feel free to make contributions or fork me.
-                <a class="octicon octicon-mark-github moreinfo-githubLink" href="https://github.com/TheIronDeveloper/octoshelf"></a>
-            </div>
+            <a href="#" id="toggleViewType" class="octicon octicon-three-bars toggleViewType"></a>
+            <a href="#" id="moreInfoToggle" class="octicon octicon-question moreInfo-toggle"></a>
         </span>
-    </div>
-</main>
+    </section>
+    <section id="infoPanelDescription" class="infoPanel-description">
+        <h2>Welcome to OctoShelf!</h2>
+        <p>OctoShelf is here to help you manage pull requests across multiple repositories.</p>
+        <p>OctoShelf is powered by <a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage">LocalStorage</a>,
+            <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API">WebWorkers</a>,
+            <a href="https://developer.mozilla.org/en-US/docs/Web/API/notification">Notifications</a>,
+            and <a href="https://developer.github.com/v3/">Github's Api</a>.</p>
+        <a class="mega-octicon octicon-mark-github moreinfo-githubLink" href="https://github.com/TheIronDeveloper/octoshelf"></a>
+    </section>
+    <section class="infoPanel-example">
+        <h2>Enterprise Usage</h2>
+        <p>If you want to use OctoShelf for public Github, you're in the right place!</p>
+        <p>But, lets say you want this on an enterprise account. All you need to do is fork this repo, and make two changes.</p>
+        <ol class="infoPanel-steps">
+            <li>
+                Update config to point to your enterprise endpoints
+    <pre class="infoPanel-exampleCode">
+    <h3 class="infoPanel-exampleCode-header">/config/githubApi.json</h3>
+    {
+      "githubAuthUrl":  "", // request github access url (redirects back to /auth)
+      "githubTokenUrl": "", // retrieves access_token (called from /auth?code=xxx)
+      "apiUrl":         "", // root github api urls
+      "githubUrl":      ""  // root github repository urls
+    }
+    </pre>
+            </li>
+            <li>
+                Start the app with a public access token or a clientId and clientSecret
+    <pre class="infoPanel-exampleCode">
+    <h3 class="infoPanel-exampleCode-header">Starting the App</h3>
+    <span class="highlight">PERSONAL_ACCESS_TOKEN</span>=xxx npm start
+
+     - or -
+
+    <span class="highlight">GITHUB_CLIENT_ID</span>=xxx <span class="highlight">GITHUB_CLIENT_SECRET</span>=xxx npm start
+    </pre>
+            </li>
+        </ol>
+    </section>
+</section>
 <script src="./scripts/octoshelf.js"></script>
 <script>
     OctoShelf({

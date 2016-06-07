@@ -18,6 +18,7 @@ function OctoShelf(options) {
   const origin = options.origin || 'http://www.octoshelf.com';
 
   const appWorker = new Worker('./scripts/octo.worker.js');
+  const app = document.getElementById('octoshelf');
   const repoSection = document.getElementById('repoSection');
   const authStatus = document.getElementById('authStatus');
   const syncAll = document.getElementById('syncAll');
@@ -28,12 +29,16 @@ function OctoShelf(options) {
   const refreshRateOptions = document.getElementById('refreshRateOptions');
   const requestNotifications = document.getElementById('requestNotifications');
 
+  const toggleViewType = document.getElementById('toggleViewType');
+  const moreInfoToggle = document.getElementById('moreInfoToggle');
+
   const stylesheetHelper = document.createElement("style");
+  const topPanelHeight = 60;
   const inputWrapperSize = 130;
   const startingRefreshRate = 60000;
   const bubbleSize = 150;
-  const centerDistance = 300;
   const prResizeThreshold = 8;
+  let centerDistance = 0;
 
   /**
    * RepoStateManager - Abstracts away persisting repository urls and CRUDs.
@@ -136,6 +141,19 @@ function OctoShelf(options) {
       event.preventDefault();
       requestNotifcations();
     });
+    moreInfoToggle.addEventListener('click', function(event) {
+      event.preventDefault();
+      let height = window.innerHeight - window.scrollY - topPanelHeight;
+      for (let i = 0; i < height; i++) {
+        setTimeout(() => {
+          window.scrollBy(0, 1);
+        }, i);
+      }
+    });
+    toggleViewType.addEventListener('click', function(event) {
+      event.preventDefault();
+      app.classList.toggle('octoInline');
+    });
 
     window.addEventListener('resize', function() {
       if (resizeDebounce) {
@@ -144,7 +162,7 @@ function OctoShelf(options) {
 
       resizeDebounce = setTimeout(function(innerHeight, innerWidth) {
         updateBubbleStyles(innerHeight, innerWidth);
-      }, 60, window.innerHeight, window.innerWidth);
+      }, 30, window.innerHeight, window.innerWidth);
     });
     window.addEventListener("visibilitychange", function() {
       let isVisible = document.visibilityState !== 'hidden';
@@ -165,9 +183,14 @@ function OctoShelf(options) {
    * @param {Number} innerWidth - width of the window
    */
   function updateBubbleStyles(innerHeight, innerWidth) {
+    let modifiedHeight = innerHeight - 40;
     let bubbleModify = bubbleSize / 2;
-    let top = (innerHeight / 2) - bubbleModify;
+    let top = (innerHeight / 2) - bubbleModify - 20;
     let left = (innerWidth / 2) - bubbleModify;
+
+    let hDistance = (modifiedHeight / 2) - (bubbleSize * 2 / 3);
+    let wDistance = (innerWidth / 2) - (bubbleSize * 2 / 3);
+    centerDistance = hDistance < wDistance ? hDistance : wDistance;
 
     while (stylesheetHelper.sheet.cssRules.length) {
       if (stylesheetHelper.sheet.removeRule) {
@@ -179,13 +202,20 @@ function OctoShelf(options) {
     let size = bubbleSize;
     let dims = ['height', 'width'].map(prop => prop + `:${size}px`).join(';');
     let pos = `top:${top}px;left:${left}px;`;
-    let wrapRule = `transition: all .5s ease;${pos};${dims}`;
     let wrapSelector = '.app-prompt, .app-repositoriesWrapper';
-    let afterRule = `top: ${size - 1}px;height:${size}px`;
+    let wrapRule = `transition: all .5s ease;${pos};${dims}`;
+
+    let afterHeight = centerDistance - (bubbleSize / 2);
+    let afterRule = `top: ${size}px;height:${afterHeight}px`;
 
     stylesheetHelper.sheet.insertRule(`${wrapSelector} {${wrapRule}}`, 0);
     stylesheetHelper.sheet.insertRule(`.bubble {${dims}}`, 0);
     stylesheetHelper.sheet.insertRule(`.repository:after {${afterRule}}`, 0);
+
+    let toggleInline = innerHeight < 550 || innerWidth < 500;
+    app.classList.toggle('octoInline', toggleInline);
+
+    updateRotations();
   }
 
   /**
