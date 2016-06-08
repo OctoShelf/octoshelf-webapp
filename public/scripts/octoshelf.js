@@ -185,7 +185,7 @@ function OctoShelf(options) {
   function updateBubbleStyles(innerHeight, innerWidth) {
     let modifiedHeight = innerHeight - 40;
     let bubbleModify = bubbleSize / 2;
-    let top = (innerHeight / 2) - bubbleModify - 20;
+    let top = (innerHeight / 2) - bubbleModify - 40;
     let left = (innerWidth / 2) - bubbleModify;
 
     let hDistance = (modifiedHeight / 2) - (bubbleSize * 2 / 3);

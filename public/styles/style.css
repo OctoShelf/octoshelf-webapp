@@ -2,13 +2,19 @@
     box-sizing: border-box;
 }
 
-html {background: #EFFEFF}
+html {}
 html, body {height: 100%;padding: 0;margin: 0}
 main {min-height: 100%;padding: 0;margin: 0}
 body {font-family: "Helvetica Neue Light", "HelveticaNeue-Light", "Helvetica Neue", Calibri, Helvetica, Arial;}
 h1 {color: #fff;display: inline;font-size: 1.5rem;margin: 0;}
 p {margin: 0 0 1rem}
 a{ color: #fff}
+
+
+.octoshelf-icon {
+    height: 20px;
+    margin: 0 auto;
+}
 
 .prList {margin: 0;padding: 0}
 .prListItem {
@@ -86,6 +92,9 @@ a{ color: #fff}
 }
 
 .app {
+    background: url('/images/background.jpg');
+    background-attachment: fixed;
+    background-size: cover;
     width: 100%;
     position: relative;
 }
@@ -119,19 +128,20 @@ a{ color: #fff}
     left: 0;
 
     background: #333;
-    border: 1px solid #000;
+    border: 1px solid #aaa;
     border-radius: 50%;
+    box-shadow: 0 0px 52px #ccc;
     color: #fff;
 }
 .app-repositoriesWrapper {position: absolute}
 .app-repositories {position: relative}
-.repository {transform: rotate(0deg) translateY(-300px);box-shadow: 3px 2px 2px #ccc}
+.repository {transform: rotate(0deg) translateY(-300px);}
 .repository.loading {opacity: 0.2}
 .repository:after {
     content: ' ';
     display: block;
     background: #333;
-    box-shadow: 3px 2px 2px #ccc;
+    box-shadow: 2px 2px 2px #ccc;
     height: 0;
     width: 5px;
     margin: -1px auto;
@@ -176,8 +186,9 @@ a{ color: #fff}
     min-height: 100%;
     width:100%;
     padding: 1rem;
-    text-align: left;
+    position: relative;
     margin-top: -60px;
+    text-align: left;
 }
 .infoPanel .octicon {vertical-align: middle}
 .infoPanel-actions {border-left: 1px solid #fff;padding-left: 0.5rem;margin-left: 0.5rem;position: relative}
@@ -204,6 +215,20 @@ a{ color: #fff}
     margin: 0 1rem;
 }
 .highlight {background: rgba(255,255,0,0.5);padding: 0.5rem}
+.octoshelf-transparent {
+    background: url('/images/octoshelf-link.png') #333 no-repeat;
+    background-size: 75px;
+    background-position: center center;
+    border-radius: 50%;
+    display: block;
+    margin: 0 auto;
+    height: 100px;
+    width: 100px;
+    padding: 0.5rem;
+}
+.octoshelf-transparent:hover {
+    background-image: url(/images/octoshelf-link-hover.png)
+}
 .moreinfo-githubLink {color: #333;}
 
 .refreshRate_wrapper {
@@ -257,6 +282,7 @@ a{ color: #fff}
     width: 100% !important;
     text-align: left;
     border: 0;
+    box-shadow: none;
     height: unset;
     margin-bottom: 1rem;
     border-radius: 0;

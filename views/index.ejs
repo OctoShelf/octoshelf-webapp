@@ -6,6 +6,25 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>OctoShelf</title>
+    <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png">
+    <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+    <link rel="icon" type="image/png" href="/favicon-194x194.png" sizes="194x194">
+    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+    <link rel="icon" type="image/png" href="/android-chrome-192x192.png" sizes="192x192">
+    <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+    <meta name="msapplication-TileColor" content="#da532c">
+    <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+    <meta name="theme-color" content="#333333">
     <link rel="stylesheet" type="text/css" href="./styles/octicons.css"></link>
     <link rel="stylesheet" type="text/css" href="./styles/style.css"></link>
 </head>
@@ -13,6 +32,7 @@
 <main id="octoshelf" class="app">
     <section id="addSection" class="app-prompt">
         <form id="addRepoForm" class="bubble">
+            <img class="octoshelf-icon" src="/images/octoshelf-icon.png" title="OctoShelf, a GitHub powered pull request manager" />
             <div class="addRepoInput-wrapper">
                 <div class="addRepoInput-prefix"><%= githubUrl %></div>
                 <input type="text" id="addRepoInput" class="addRepoInput-input" placeholder="Repository Url" />
@@ -42,6 +62,7 @@
             <a href="https://github.com" class="octicon octicon-logo-github"></a>
             powered</span> pull request manager
             </span>
+            <img class="octoshelf-icon" src="/images/octoshelf-icon.png"  title="OctoShelf, a GitHub powered pull request manager" />
         </span>
         <span class="infoPanel-actions">
             <span class="refreshRate_wrapper">
@@ -85,7 +106,8 @@
             <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API">WebWorkers</a>,
             <a href="https://developer.mozilla.org/en-US/docs/Web/API/notification">Notifications</a>,
             and <a href="https://developer.github.com/v3/">Github's Api</a>.</p>
-        <a class="mega-octicon octicon-mark-github moreinfo-githubLink" href="https://github.com/TheIronDeveloper/octoshelf"></a>
+
+        <a class="octoshelf-transparent" href="https://github.com/TheIronDeveloper/octoshelf"></a>
     </section>
     <section class="infoPanel-example">
         <h2>Enterprise Usage</h2>
