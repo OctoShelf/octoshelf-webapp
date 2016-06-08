@@ -337,7 +337,8 @@ function sendNotification(notifyTitle, body) {
   let permissionMap = {
     granted() {
       let notification = new Notification(notifyTitle, {
-        body
+        body,
+        icon: '/images/octoshelf-icon-dark.jpg'
       });
       setTimeout(notification.close.bind(notification), 5000);
     },

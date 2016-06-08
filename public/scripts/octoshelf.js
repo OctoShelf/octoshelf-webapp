@@ -28,6 +28,7 @@ function OctoShelf(options) {
   const refreshRateIcon = document.getElementById('refreshRateIcon');
   const refreshRateOptions = document.getElementById('refreshRateOptions');
   const requestNotifications = document.getElementById('requestNotifications');
+  const appBackground = document.getElementById('appBackground');
 
   const toggleViewType = document.getElementById('toggleViewType');
   const moreInfoToggle = document.getElementById('moreInfoToggle');
@@ -580,6 +581,39 @@ function OctoShelf(options) {
   }
 
   /**
+   * Lazy Load a sweet background image into focus.
+   *
+   * We start off with a low-res blurred image on the `body` tag that gets loaded
+   * very quickly. We then load a high-res background image to an empty `img` tag.
+   * Once the image has finished loading, we insert the image as a background to
+   * an empty div that has blur(10px), and slowly animate away that blur to 0.
+   */
+  function lazyLoadBackground() {
+    let img = document.createElement('img');
+    let imgSrc = '/images/background.jpg';
+    let now = Date.now();
+    img.setAttribute('src', imgSrc);
+
+    img.onload = function() {
+      appBackground.style.backgroundImage = `url(${imgSrc})`;
+      let loadTime = Date.now() - now;
+
+      /**
+       * If the loadTime is less than 100ms, the background was likely cached.
+       * Slowly unbluring the background is a cool nice animation, but if they've
+       * seen it once before, we should limit the duration of the blurry state.
+       */
+      if (loadTime < 1000) {
+        return appBackground.classList.add('loaded');
+      }
+
+      setTimeout(() => {
+        appBackground.classList.add('loaded');
+      }, 1000);
+    };
+  }
+
+  /**
    * Initialize the app!
    */
   (function init() {
@@ -591,6 +625,7 @@ function OctoShelf(options) {
       return notify(`Several api vars were found missing: ${missing}`, 4000);
     }
     document.head.appendChild(stylesheetHelper);
+    lazyLoadBackground();
     initAPIVariables({initAccessToken, initApiUrl, initGithubUrl});
     updateBubbleStyles(window.innerHeight, window.innerWidth);
     resizeGitubPrefix();

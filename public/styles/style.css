@@ -5,7 +5,13 @@
 html {}
 html, body {height: 100%;padding: 0;margin: 0}
 main {min-height: 100%;padding: 0;margin: 0}
-body {font-family: "Helvetica Neue Light", "HelveticaNeue-Light", "Helvetica Neue", Calibri, Helvetica, Arial;}
+body {
+    background: url('/images/background-blurred.jpg');
+    background-attachment: fixed;
+    background-size: cover;
+    font-family: "Helvetica Neue Light", "HelveticaNeue-Light", "Helvetica Neue", Calibri, Helvetica, Arial;
+    min-height: 100%;
+}
 h1 {color: #fff;display: inline;font-size: 1.5rem;margin: 0;}
 p {margin: 0 0 1rem}
 a{ color: #fff}
@@ -92,15 +98,29 @@ a{ color: #fff}
 }
 
 .app {
-    background: url('/images/background.jpg');
-    background-attachment: fixed;
-    background-size: cover;
     width: 100%;
     position: relative;
 }
 .app-prompt,
 .app-repositories{text-align: center}
 .app-prompt {position: absolute;top: 0;left: 0;z-index: 1}
+.app-background {
+    background-attachment: fixed;
+    background-size: cover;
+    transition: all 1s ease;
+    position: fixed;
+    top:0;
+    left:0;
+    width: 100%;
+    height: 100%;
+    transform: translate3d(0, 0, 0);
+    -webkit-filter: blur(10px);
+    filter: blur(10px);
+}
+.app-background.loaded {
+    -webkit-filter: blur(0);
+    filter: blur(0);
+}
 
 .addRepoInput-wrapper {
     background: #fff;
