@@ -86,6 +86,7 @@ function OctoShelf(options) {
     addRepoInput.addEventListener('input', function() {
       if (addRepoInput.value.includes(initGithubUrl)) {
         addRepoInput.value = addRepoInput.value.replace(initGithubUrl, '');
+        addRepoInput.value = addRepoInput.value.replace(/\/+$/, '');
       }
     });
     if (authStatus) {

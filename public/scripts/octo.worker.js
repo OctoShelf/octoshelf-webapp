@@ -82,6 +82,9 @@ function simplifyPR({id, title, html_url: url}) {
  * @return {Promise} repoDetails - repo's details and open prs
  */
 function addRepo(url) {
+  // Clean the url (just in case bad urls got through)
+  url = url.replace(/\/+$/, '');
+
   if (repositories.find(repo => repo.url === url)) {
     parsedPostMessage('notify', 'That repo was already added');
     return;
