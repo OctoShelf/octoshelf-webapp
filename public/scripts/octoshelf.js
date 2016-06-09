@@ -39,6 +39,8 @@ function OctoShelf(options) {
   const startingRefreshRate = 60000;
   const bubbleSize = 150;
   const prResizeThreshold = 8;
+  let isPageVisible = true;
+  let newPRQueue = [];
   let centerDistance = 0;
 
   /**
@@ -167,8 +169,9 @@ function OctoShelf(options) {
       }, 30, window.innerHeight, window.innerWidth);
     });
     window.addEventListener("visibilitychange", function() {
-      let isVisible = document.visibilityState !== 'hidden';
-      parsedPostMessage('pageVisibilityChanged', isVisible);
+      isPageVisible = document.visibilityState !== 'hidden';
+      parsedPostMessage('pageVisibilityChanged', isPageVisible);
+      removeNewPullRequestAnimations();
     });
   }
 
@@ -368,9 +371,17 @@ function OctoShelf(options) {
     }
 
     prs.forEach(({id, title, url}) => {
-      let prListItem = document.createElement('li');
+      let prListItem = document.getElementById(id);
+      let prMoreInfo;
+      if (prListItem) {
+        prMoreInfo = prListItem.querySelector('.prMoreInfo');
+        prMoreInfo.innerText = title;
+        return pullRequestFragment.appendChild(prListItem);
+      }
+
+      prListItem = document.createElement('li');
       let prLink = document.createElement('a');
-      let prMoreInfo = document.createElement('span');
+      prMoreInfo = document.createElement('span');
 
       prListItem.setAttribute('id', id);
 
@@ -429,10 +440,30 @@ function OctoShelf(options) {
         return;
       }
       element.classList.add('newPullRequest');
+    });
+    newPRQueue.push(...ids);
+    removeNewPullRequestAnimations();
+  }
+
+  /**
+   * Remove the "highlight" style from newly added pull requests...
+   * only when the user is looking at the page.  Otherwise, we
+   * continue queing them up for later.
+   */
+  function removeNewPullRequestAnimations() {
+    if (!isPageVisible) {
+      return;
+    }
+    newPRQueue.forEach(id => {
+      let element = document.getElementById(id);
+      if (!element) {
+        return;
+      }
       setTimeout(() => {
         element.classList.remove('newPullRequest');
       }, 1000);
     });
+    newPRQueue = [];
   }
 
   /**

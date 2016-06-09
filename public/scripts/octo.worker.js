@@ -14,8 +14,8 @@ let apiUrl = '';
 let githubUrl = '';
 let accessToken = '';
 
+let newPRMap;
 let currentPRMap = new Map();
-let previousPRMap = new Map();
 let isPageVisible = true;
 
 const repository = {
@@ -175,15 +175,11 @@ function getRepoDetails(repository) {
         repository.prs = prs.map(simplifyPR);
       })
       .catch(() => {
-        removeRepo(url);
-        parsedPostMessage('notify', 'Invalid Url');
-        repoStillOnDom = false;
+        parsedPostMessage('notify', 'There was an error fetching pull requests');
       })
       .then(() => {
-        if (repoStillOnDom) {
-          parsedPostMessage('updateRepository', repository);
-          parsedPostMessage('toggleLoadingRepository', [id, url, false]);
-        }
+        parsedPostMessage('updateRepository', repository);
+        parsedPostMessage('toggleLoadingRepository', [id, url, false]);
         return repository;
       });
   }
@@ -253,11 +249,9 @@ function sendNewPullRequestNotification(pullRequests, isPageVisible) {
  * @param {Array} pullRequests - array of new pull requests
  * @param {Boolean} isPageVisible - we only want to animate on active pages
  */
-function animateNewPullRequests(pullRequests, isPageVisible) {
-  if (isPageVisible) {
-    let ids = pullRequests.map(pr => pr.id);
-    parsedPostMessage('animateNewPullRequests', ids);
-  }
+function animateNewPullRequests(pullRequests) {
+  let ids = pullRequests.map(pr => pr.id);
+  parsedPostMessage('animateNewPullRequests', ids);
 }
 
 /**
@@ -268,9 +262,8 @@ function getAllRepoDetails() {
   let allRepos = repositories.map(repository => getRepoDetails(repository));
   Promise.all(allRepos)
     .then(repos => {
-      let newPRMap = new Map();
+      newPRMap = new Map();
       repos.forEach(repo => repo.prs.forEach(pr => newPRMap.set(pr.id, pr)));
-      previousPRMap = newPRMap;
 
       let newPrs = getNewPullRequests(newPRMap, currentPRMap);
       let updateFns = [
@@ -280,13 +273,9 @@ function getAllRepoDetails() {
 
       if (newPrs.length) {
         updateFns.forEach(fn => fn(newPrs, isPageVisible));
-      } else {
-        currentPRMap = newPRMap;
       }
 
-      if (isPageVisible) {
-        currentPRMap = newPRMap;
-      }
+      currentPRMap = newPRMap;
     });
 }
 
@@ -361,7 +350,9 @@ function sendNotification(notifyTitle, body) {
  */
 function pageVisibilityChanged(isVisible) {
   isPageVisible = isVisible;
-  currentPRMap = previousPRMap;
+  if (newPRMap) {
+    currentPRMap = newPRMap;
+  }
 }
 
 /**
