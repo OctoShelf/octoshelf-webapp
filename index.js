@@ -43,9 +43,11 @@ function getAccessToken(req) {
 }
 
 app.get('/', function (req, res) {
+  let query = req.query || {};
+  let sharedRepos = query.share || '';
   let origin = req.protocol + '://' + req.get('host');
   let accessToken = getAccessToken(req);
-  let data = Object.assign({}, config, {origin, accessToken});
+  let data = Object.assign({}, config, {origin, accessToken, sharedRepos});
   res.render('index.ejs', data);
 });
 

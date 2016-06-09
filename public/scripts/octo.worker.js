@@ -86,7 +86,7 @@ function addRepo(url) {
   url = url.replace(/\/+$/, '');
 
   if (repositories.find(repo => repo.url === url)) {
-    parsedPostMessage('notify', 'That repo was already added');
+    parsedPostMessage('notify', `"${url}" was already added`);
     return;
   }
 
