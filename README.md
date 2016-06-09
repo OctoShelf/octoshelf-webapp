@@ -29,6 +29,8 @@ With OctoShelf you can...
 * Check for new pull requests (Managed by a background web worker)
 * Receive notifications when tabbed away (using Notifications API)
 * Point API calls to an enterprise account (see below)
+* Share a group of repos with someone else
+    * Example: `http://www.octoshelf.com/?share=facebook/react,polymer/polymer`
 
 ## Running the App
 

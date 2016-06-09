@@ -16,6 +16,8 @@ function OctoShelf(options) {
   const initApiUrl = options.initApiUrl || 'https://api.github.com';
   const initGithubUrl = options.initGithubUrl || 'https://github.com/';
   const origin = options.origin || 'http://www.octoshelf.com';
+  const sharedReposString = options.sharedRepos || '';
+  const sharedRepos = sharedReposString.split(',');
 
   const appWorker = new Worker('./scripts/octo.worker.js');
   const app = document.getElementById('octoshelf');
@@ -32,6 +34,10 @@ function OctoShelf(options) {
 
   const toggleViewType = document.getElementById('toggleViewType');
   const moreInfoToggle = document.getElementById('moreInfoToggle');
+
+  const shareWrapper = document.getElementById('shareWrapper');
+  const shareContent = document.getElementById('shareContent');
+  const shareToggle = document.getElementById('shareToggle');
 
   const stylesheetHelper = document.createElement("style");
   const topPanelHeight = 60;
@@ -157,6 +163,18 @@ function OctoShelf(options) {
     toggleViewType.addEventListener('click', function(event) {
       event.preventDefault();
       app.classList.toggle('octoInline');
+    });
+    shareToggle.addEventListener('click', function(event) {
+      event.preventDefault();
+      let child = repoSection.firstChild;
+      let urls = [];
+      while (child) {
+        urls.push(child.dataset.url);
+        child = child.nextSibling;
+      }
+      let url = window.location.origin + '?share=' + urls.join(',');
+      shareWrapper.classList.toggle('toggle');
+      shareContent.innerText = url;
     });
 
     window.addEventListener('resize', function() {
@@ -646,6 +664,16 @@ function OctoShelf(options) {
   }
 
   /**
+   * If the url has the share queryParam, pass in each of the repos.
+   * Example url: /?share=org/repo1,org/repo2,org/repo3
+   */
+  function loadSharedRepos() {
+    sharedRepos.filter(repo => repo).forEach(url => {
+      addRepository(url);
+    });
+  }
+
+  /**
    * Initialize the app!
    */
   (function init() {
@@ -662,6 +690,7 @@ function OctoShelf(options) {
     updateBubbleStyles(window.innerHeight, window.innerWidth);
     resizeGitubPrefix();
     repoStateManager.fetch();
+    loadSharedRepos();
     startRefreshing(startingRefreshRate);
     loadEventListeners();
   })();

@@ -97,6 +97,10 @@
                 <div class="notification-moreInfo">Allow Notifications?</div>
             </span>
             <a href="#" id="toggleViewType" class="octicon octicon-three-bars toggleViewType"></a>
+            <span id="shareWrapper" class="share-wrapper">
+                <a href="#" id="shareToggle" class="octicon octicon-link share-toggle"></a>
+                <span id="shareContent" class="share-content"></span>
+            </span>
             <a href="#" id="moreInfoToggle" class="octicon octicon-question moreInfo-toggle"></a>
         </span>
     </section>
@@ -147,6 +151,7 @@
         initAccessToken: '<%= accessToken %>',
         initApiUrl: '<%= apiUrl %>',
         initGithubUrl: '<%= githubUrl %>',
+        sharedRepos: '<%= sharedRepos %>',
         origin: '<%= origin %>'
     });
 </script>
