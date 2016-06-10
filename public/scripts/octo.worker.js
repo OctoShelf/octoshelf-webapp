@@ -9,35 +9,41 @@
  */
 
 'use strict';
-let repositories = [];
-let apiUrl = '';
-let githubUrl = '';
-let accessToken = '';
+var repositories = [];
+var apiUrl = '';
+var githubUrl = '';
+var accessToken = '';
 
-let newPRMap;
-let currentPRMap = new Map();
-let isPageVisible = true;
+var newPRMap;
+var currentPRMap = new Map();
+var isPageVisible = true;
 
-const repository = {
+var repository = {
   url: '',
   placeholderUpdated: false,
   fetchedDetails: false
 };
 
 // Its refreshing!
-const peppermint = {
+var peppermint = {
   refreshTimeout: null,
   refreshFn(delay) {
     log(`Refreshing at ${new Date()}`);
     parsedPostMessage('hasRefreshed', '');
     getAllRepoDetails();
-    this.refreshTimeout = setTimeout(() => this.refreshFn(delay), delay);
+    var refreshFn = this.refreshFn;
+    this.refreshTimeout = setTimeout(function() {
+      refreshFn.call(peppermint, delay);
+    }, delay);
   },
   startRefreshing(delay) {
     if (this.refreshTimeout) {
       stopRefreshing();
     }
-    this.refreshTimeout = setTimeout(() => this.refreshFn(delay), delay);
+    var refreshFn = this.refreshFn;
+    this.refreshTimeout = setTimeout(function() {
+      refreshFn.call(peppermint, delay);
+    }, delay);
   },
   stopRefreshing() {
     clearTimeout(this.refreshTimeout);
@@ -84,13 +90,16 @@ function simplifyPR({id, title, html_url: url}) {
 function addRepo(url) {
   // Clean the url (just in case bad urls got through)
   url = url.replace(/\/+$/, '');
+  var found = repositories.find(function(repo) {
+    return repo.url === url;
+  });
 
-  if (repositories.find(repo => repo.url === url)) {
+  if (found) {
     parsedPostMessage('notify', `"${url}" was already added`);
     return;
   }
 
-  let newRepository = Object.assign({}, repository, {
+  var newRepository = Object.assign({}, repository, {
     prs: [],
     url: url
   });
@@ -106,7 +115,9 @@ function addRepo(url) {
  * @param {String} url - url of the repo we are removing
  */
 function removeRepo(url) {
-  repositories = repositories.filter(repo => repo.url !== url);
+  repositories = repositories.filter(function(repo) {
+    return repo.url !== url;
+  });
   parsedPostMessage('removeRepository', url);
 }
 
@@ -150,7 +161,7 @@ function fetchRepoPulls(repoUrl) {
  */
 function fetchRepo(repoUrl) {
   return Promise.all([fetchRepoDetails(repoUrl), fetchRepoPulls(repoUrl)])
-    .then(([repoDetails, prs]) => {
+    .then(function([repoDetails, prs]) {
       return Promise.all([repoDetails.json(), prs.json()]);
     });
 }
@@ -162,22 +173,24 @@ function fetchRepo(repoUrl) {
  * @return {Promise.<T>} RepoDetails - repo details
  */
 function getRepoDetails(repository) {
-  let {id, url, fetchedDetails} = repository;
-  let repoUrl = url.replace(githubUrl, '');
-  let repoStillOnDom = true;
+  var {id, url, fetchedDetails} = repository;
+  var repoUrl = url.replace(githubUrl, '');
+  var repoStillOnDom = true;
 
   // If we already got the repository details, lets only fetch pull requests
   if (fetchedDetails) {
     parsedPostMessage('toggleLoadingRepository', [id, url, true]);
     return fetchRepoPulls(repoUrl)
-      .then(prs => prs.json())
-      .then(prs => {
+      .then(function(prs) {
+        return prs.json();
+      })
+      .then(function(prs) {
         repository.prs = prs.map(simplifyPR);
       })
-      .catch(() => {
+      .catch(function() {
         parsedPostMessage('notify', 'There was an error fetching pull requests');
       })
-      .then(() => {
+      .then(function() {
         parsedPostMessage('updateRepository', repository);
         parsedPostMessage('toggleLoadingRepository', [id, url, false]);
         return repository;
@@ -185,10 +198,10 @@ function getRepoDetails(repository) {
   }
 
   return fetchRepo(repoUrl)
-    .then(([{id, name, full_name}, prs]) => {
+    .then(function([{id, name, full_name}, prs]) {
       /* eslint camelcase:0 */
-      let simplePrs = prs.map(simplifyPR);
-      simplePrs.forEach(pr => {
+      var simplePrs = prs.map(simplifyPR);
+      simplePrs.forEach(function(pr) {
         currentPRMap.set(pr.id, pr);
       });
       repository.id = id;
@@ -197,12 +210,12 @@ function getRepoDetails(repository) {
       repository.prs = simplePrs;
       repository.fetchedDetails = true;
     })
-    .catch(() => {
+    .catch(function() {
       removeRepo(url);
       parsedPostMessage('notify', 'Invalid Url');
       repoStillOnDom = false;
     })
-    .then(() => {
+    .then(function() {
       if (repoStillOnDom) {
         parsedPostMessage('updateRepository', repository);
         parsedPostMessage('toggleLoadingRepository', [id, url, false]);
@@ -219,7 +232,7 @@ function getRepoDetails(repository) {
  */
 function getNewPullRequests(fetchedResults, previousResults) {
   var pullRequests = [];
-  fetchedResults.forEach((pr, id) => {
+  fetchedResults.forEach(function(pr, id) {
     if (!previousResults.has(id)) {
       pullRequests.push(pr);
     }
@@ -234,10 +247,10 @@ function getNewPullRequests(fetchedResults, previousResults) {
  */
 function sendNewPullRequestNotification(pullRequests, isPageVisible) {
   if (!isPageVisible) {
-    let size = pullRequests.length;
-    let requestWord = size > 1 ? 'requests' : 'request';
-    let title = `[OctoShelf] : ${size} new pull ${requestWord}`;
-    let body = pullRequests.map(pr => {
+    var size = pullRequests.length;
+    var requestWord = size > 1 ? 'requests' : 'request';
+    var title = `[OctoShelf] : ${size} new pull ${requestWord}`;
+    var body = pullRequests.map(function(pr) {
       return '• ' + (pr.url || '').replace(githubUrl, '');
     }).join('\n');
     sendNotification(title, body);
@@ -250,7 +263,9 @@ function sendNewPullRequestNotification(pullRequests, isPageVisible) {
  * @param {Boolean} isPageVisible - we only want to animate on active pages
  */
 function animateNewPullRequests(pullRequests) {
-  let ids = pullRequests.map(pr => pr.id);
+  var ids = pullRequests.map(function(pr) {
+    return pr.id;
+  });
   parsedPostMessage('animateNewPullRequests', ids);
 }
 
@@ -259,20 +274,28 @@ function animateNewPullRequests(pullRequests) {
  * (which in turn updates the DOM with each of them)
  */
 function getAllRepoDetails() {
-  let allRepos = repositories.map(repository => getRepoDetails(repository));
+  var allRepos = repositories.map(function(repository) {
+    return getRepoDetails(repository);
+  });
   Promise.all(allRepos)
-    .then(repos => {
+    .then(function(repos) {
       newPRMap = new Map();
-      repos.forEach(repo => repo.prs.forEach(pr => newPRMap.set(pr.id, pr)));
+      repos.forEach(function(repo) {
+        repo.prs.forEach(function(pr) {
+          newPRMap.set(pr.id, pr);
+        });
+      });
 
-      let newPrs = getNewPullRequests(newPRMap, currentPRMap);
-      let updateFns = [
+      var newPrs = getNewPullRequests(newPRMap, currentPRMap);
+      var updateFns = [
         sendNewPullRequestNotification,
         animateNewPullRequests
       ];
 
       if (newPrs.length) {
-        updateFns.forEach(fn => fn(newPrs, isPageVisible));
+        updateFns.forEach(function(fn) {
+          fn(newPrs, isPageVisible);
+        });
       }
 
       currentPRMap = newPRMap;
@@ -284,7 +307,9 @@ function getAllRepoDetails() {
  * @param {String} url - url of a repo
  */
 function getRepoDetailsByUrl(url) {
-  let repository = repositories.find(repo => repo.url === url);
+  var repository = repositories.find(function(repo) {
+    return repo.url === url;
+  });
   if (repository) {
     getRepoDetails(repository);
   }
@@ -297,8 +322,8 @@ function getRepoDetailsByUrl(url) {
  * @param {String} params - Stringified object that contains a postData prop
  */
 function unwrapPostMessage(fn, msgType, params) {
-  let parsedParams = JSON.parse(params);
-  let postData = parsedParams.postData;
+  var parsedParams = JSON.parse(params);
+  var postData = parsedParams.postData;
   log(`[Worker] "${msgType}" called with:`, postData);
   fn(postData);
 }
@@ -325,10 +350,10 @@ function parsedPostMessage(messageType, postData) {
  * @param {String} body - notification body
  */
 function sendNotification(notifyTitle, body) {
-  let {permission} = Notification;
-  let permissionMap = {
+  var {permission} = Notification;
+  var permissionMap = {
     granted() {
-      let notification = new Notification(notifyTitle, {
+      var notification = new Notification(notifyTitle, {
         body,
         icon: '/images/octoshelf-icon-dark.jpg'
       });
@@ -376,8 +401,17 @@ function getWorkerState() {
   return {repositories, accessToken};
 }
 
+// Before we add any event listeners, lets check to see if we need polyfills
+if (typeof Promise === 'undefined') {
+  importScripts('/components/es6-promise/es6-promise.min.js');
+}
+
+if (typeof fetch === 'undefined') {
+  importScripts('/components/fetch/fetch.js');
+}
+
 self.addEventListener('message', function({data: [msgType, msgData]}) {
-  let msgTypes = {
+  var msgTypes = {
     startRefreshing,
     stopRefreshing,
     getRepoDetails,

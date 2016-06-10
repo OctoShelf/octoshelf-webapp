@@ -12,42 +12,42 @@
  * @param {Object} options - OctoShelf options
  */
 function OctoShelf(options) {
-  const initAccessToken = options.initAccessToken;
-  const initApiUrl = options.initApiUrl || 'https://api.github.com';
-  const initGithubUrl = options.initGithubUrl || 'https://github.com/';
-  const origin = options.origin || 'http://www.octoshelf.com';
-  const sharedReposString = options.sharedRepos || '';
-  const sharedRepos = sharedReposString.split(',');
+  var initAccessToken = options.initAccessToken;
+  var initApiUrl = options.initApiUrl || 'https://api.github.com';
+  var initGithubUrl = options.initGithubUrl || 'https://github.com/';
+  var origin = options.origin || 'http://www.octoshelf.com';
+  var sharedReposString = options.sharedRepos || '';
+  var sharedRepos = sharedReposString.split(',');
 
-  const appWorker = new Worker('./scripts/octo.worker.js');
-  const app = document.getElementById('octoshelf');
-  const repoSection = document.getElementById('repoSection');
-  const authStatus = document.getElementById('authStatus');
-  const syncAll = document.getElementById('syncAll');
-  const addRepoForm = document.getElementById('addRepoForm');
-  const addRepoInput = document.getElementById('addRepoInput');
-  const notifications = document.getElementById('notifications');
-  const refreshRateIcon = document.getElementById('refreshRateIcon');
-  const refreshRateOptions = document.getElementById('refreshRateOptions');
-  const requestNotifications = document.getElementById('requestNotifications');
-  const appBackground = document.getElementById('appBackground');
+  var appWorker = new Worker('./scripts/octo.worker.js');
+  var app = document.getElementById('octoshelf');
+  var repoSection = document.getElementById('repoSection');
+  var authStatus = document.getElementById('authStatus');
+  var syncAll = document.getElementById('syncAll');
+  var addRepoForm = document.getElementById('addRepoForm');
+  var addRepoInput = document.getElementById('addRepoInput');
+  var notifications = document.getElementById('notifications');
+  var refreshRateIcon = document.getElementById('refreshRateIcon');
+  var refreshRateOptions = document.getElementById('refreshRateOptions');
+  var requestNotifications = document.getElementById('requestNotifications');
+  var appBackground = document.getElementById('appBackground');
 
-  const toggleViewType = document.getElementById('toggleViewType');
-  const moreInfoToggle = document.getElementById('moreInfoToggle');
+  var toggleViewType = document.getElementById('toggleViewType');
+  var moreInfoToggle = document.getElementById('moreInfoToggle');
 
-  const shareWrapper = document.getElementById('shareWrapper');
-  const shareContent = document.getElementById('shareContent');
-  const shareToggle = document.getElementById('shareToggle');
+  var shareWrapper = document.getElementById('shareWrapper');
+  var shareContent = document.getElementById('shareContent');
+  var shareToggle = document.getElementById('shareToggle');
 
-  const stylesheetHelper = document.createElement("style");
-  const topPanelHeight = 60;
-  const inputWrapperSize = 130;
-  const startingRefreshRate = 60000;
-  const bubbleSize = 150;
-  const prResizeThreshold = 8;
-  let isPageVisible = true;
-  let newPRQueue = [];
-  let centerDistance = 0;
+  var stylesheetHelper = document.createElement("style");
+  var topPanelHeight = 60;
+  var inputWrapperSize = 130;
+  var startingRefreshRate = 60000;
+  var bubbleSize = 150;
+  var prResizeThreshold = 8;
+  var isPageVisible = true;
+  var newPRQueue = [];
+  var centerDistance = 0;
 
   /**
    * RepoStateManager - Abstracts away persisting repository urls and CRUDs.
@@ -55,7 +55,7 @@ function OctoShelf(options) {
    * simply update it here, and not have to worry about a stray localStorage
    * elsewhere.
    */
-  const repoStateManager = {
+  var repoStateManager = {
     // An array of repository urls
     repositories: [],
     // A set of unique repository urls, used to prevent duplicates being added
@@ -67,15 +67,18 @@ function OctoShelf(options) {
       }
     },
     remove(url) {
-      this.repositories = this.repositories.filter(repoUrl => repoUrl !== url);
+      this.repositories = this.repositories.filter(function(repoUrl) {
+        return repoUrl !== url;
+      });
       this.uniqueRepos.delete(url);
       localStorage.setItem('repositories', JSON.stringify(this.repositories));
     },
     fetch() {
-      let repoString = localStorage.getItem('repositories') || '[]';
+      var repoString = localStorage.getItem('repositories') || '[]';
+      var uniqueRepos = this.uniqueRepos;
       this.repositories = JSON.parse(repoString);
-      this.repositories.forEach(url => {
-        this.uniqueRepos.add(url);
+      this.repositories.forEach(function(url) {
+        uniqueRepos.add(url);
         addRepository(url);
       });
     }
@@ -85,7 +88,7 @@ function OctoShelf(options) {
    * Load the App event listeners
    */
   function loadEventListeners() {
-    let resizeDebounce;
+    var resizeDebounce;
     addRepoForm.addEventListener('submit', function(event) {
       event.preventDefault();
       addRepository(addRepoInput.value);
@@ -100,9 +103,9 @@ function OctoShelf(options) {
     if (authStatus) {
       authStatus.addEventListener('click', function(event) {
         event.preventDefault();
-        let {href} = event.target;
-        let authWindow = window.open(href, '', '');
-        let timeout = setInterval(function() {
+        var {href} = event.target;
+        var authWindow = window.open(href, '', '');
+        var timeout = setInterval(function() {
           authWindow.postMessage('fetchToken', origin);
         }, 500);
 
@@ -111,7 +114,7 @@ function OctoShelf(options) {
             return;
           }
 
-          let token = event.data;
+          var token = event.data;
           parsedPostMessage('setAccessToken', token);
           authStatus.parentNode.removeChild(authStatus);
           clearTimeout(timeout);
@@ -124,8 +127,8 @@ function OctoShelf(options) {
       parsedPostMessage('getAllRepoDetails');
     });
     repoSection.addEventListener('click', function(event) {
-      let {action, url} = event.target && event.target.dataset;
-      let actionMap = {
+      var {action, url} = event.target && event.target.dataset;
+      var actionMap = {
         refresh() {
           parsedPostMessage('getRepoDetailsByUrl', url);
         },
@@ -140,8 +143,8 @@ function OctoShelf(options) {
       }
     });
     refreshRateOptions.addEventListener('change', function(event) {
-      let {value} = event.target;
-      let delay = Number(value);
+      var {value} = event.target;
+      var delay = Number(value);
       if (delay) {
         return startRefreshing(delay);
       }
@@ -153,9 +156,9 @@ function OctoShelf(options) {
     });
     moreInfoToggle.addEventListener('click', function(event) {
       event.preventDefault();
-      let height = window.innerHeight - window.scrollY - topPanelHeight;
-      for (let i = 0; i < height; i++) {
-        setTimeout(() => {
+      var height = window.innerHeight - window.scrollY - topPanelHeight;
+      for (var i = 0; i < height; i++) {
+        setTimeout(function() {
           window.scrollBy(0, 1);
         }, i);
       }
@@ -166,13 +169,13 @@ function OctoShelf(options) {
     });
     shareToggle.addEventListener('click', function(event) {
       event.preventDefault();
-      let child = repoSection.firstChild;
-      let urls = [];
+      var child = repoSection.firstChild;
+      var urls = [];
       while (child) {
         urls.push(child.dataset.url);
         child = child.nextSibling;
       }
-      let url = window.location.origin + '?share=' + urls.join(',');
+      var url = window.location.origin + '?share=' + urls.join(',');
       shareWrapper.classList.toggle('toggle');
       shareContent.innerText = url;
     });
@@ -206,13 +209,13 @@ function OctoShelf(options) {
    * @param {Number} innerWidth - width of the window
    */
   function updateBubbleStyles(innerHeight, innerWidth) {
-    let modifiedHeight = innerHeight - 40;
-    let bubbleModify = bubbleSize / 2;
-    let top = (innerHeight / 2) - bubbleModify - 40;
-    let left = (innerWidth / 2) - bubbleModify;
+    var modifiedHeight = innerHeight - 40;
+    var bubbleModify = bubbleSize / 2;
+    var top = (innerHeight / 2) - bubbleModify - 40;
+    var left = (innerWidth / 2) - bubbleModify;
 
-    let hDistance = (modifiedHeight / 2) - (bubbleSize * 2 / 3);
-    let wDistance = (innerWidth / 2) - (bubbleSize * 2 / 3);
+    var hDistance = (modifiedHeight / 2) - (bubbleSize * 2 / 3);
+    var wDistance = (innerWidth / 2) - (bubbleSize * 2 / 3);
     centerDistance = hDistance < wDistance ? hDistance : wDistance;
 
     while (stylesheetHelper.sheet.cssRules.length) {
@@ -222,20 +225,22 @@ function OctoShelf(options) {
         stylesheetHelper.sheet.deleteRule(0);
       }
     }
-    let size = bubbleSize;
-    let dims = ['height', 'width'].map(prop => prop + `:${size}px`).join(';');
-    let pos = `top:${top}px;left:${left}px;`;
-    let wrapSelector = '.app-prompt, .app-repositoriesWrapper';
-    let wrapRule = `transition: all .5s ease;${pos};${dims}`;
+    var size = bubbleSize;
+    var dims = ['height', 'width'].map(function(prop) {
+      return prop + `:${size}px`;
+    }).join(';');
+    var pos = `top:${top}px;left:${left}px;`;
+    var wrapSelector = '.app-prompt, .app-repositoriesWrapper';
+    var wrapRule = `transition: all .5s ease;${pos};${dims}`;
 
-    let afterHeight = centerDistance - (bubbleSize / 2);
-    let afterRule = `top: ${size}px;height:${afterHeight}px`;
+    var afterHeight = centerDistance - (bubbleSize / 2);
+    var afterRule = `top: ${size}px;height:${afterHeight}px`;
 
     stylesheetHelper.sheet.insertRule(`${wrapSelector} {${wrapRule}}`, 0);
     stylesheetHelper.sheet.insertRule(`.bubble {${dims}}`, 0);
     stylesheetHelper.sheet.insertRule(`.repository:after {${afterRule}}`, 0);
 
-    let toggleInline = innerHeight < 550 || innerWidth < 500;
+    var toggleInline = innerHeight < 550 || innerWidth < 500;
     app.classList.toggle('octoInline', toggleInline);
 
     updateRotations();
@@ -246,10 +251,10 @@ function OctoShelf(options) {
    * when the page loads we auto resize the font-size to make sure it fits
    */
   function resizeGitubPrefix() {
-    let prefix = document.querySelector('.addRepoInput-prefix');
-    let prefixWidth = prefix.scrollWidth;
-    let sizeRatio = ~~((inputWrapperSize / (prefixWidth + 10)) * 100) / 100;
-    let fontSize = sizeRatio < 1 ? sizeRatio : 1;
+    var prefix = document.querySelector('.addRepoInput-prefix');
+    var prefixWidth = prefix.scrollWidth;
+    var sizeRatio = ~~((inputWrapperSize / (prefixWidth + 10)) * 100) / 100;
+    var fontSize = sizeRatio < 1 ? sizeRatio : 1;
     prefix.style.fontSize = `${fontSize}rem`;
   }
 
@@ -260,7 +265,7 @@ function OctoShelf(options) {
    * @param {Boolean} isLoading - toggle showing loading state or not
    */
   function toggleLoadingRepository([id, url, isLoading]) {
-    let article = document.getElementById(id) ||
+    var article = document.getElementById(id) ||
       document.querySelector(`[data-url="${url}"]`);
 
     if (!article) {
@@ -282,30 +287,30 @@ function OctoShelf(options) {
    * @return {Element} article - placeholder element
    */
   function drawPlaceholderRepo({url}) {
-    let lastRepo = repoSection.lastElementChild;
+    var lastRepo = repoSection.lastElementChild;
 
-    let article = document.createElement('article');
+    var article = document.createElement('article');
     article.setAttribute('class', 'bubble repository loading');
     article.setAttribute('data-url', url);
 
-    let repositoryInner = document.createElement('div');
+    var repositoryInner = document.createElement('div');
     repositoryInner.setAttribute('class', 'repositoryInner');
 
-    let header = document.createElement('header');
-    let title = document.createElement('span');
+    var header = document.createElement('header');
+    var title = document.createElement('span');
     title.setAttribute('class', 'repo-title');
 
-    let actionsElement = document.createElement('div');
-    let repoLink = document.createElement('a');
-    let sync = document.createElement('a');
-    let trash = document.createElement('a');
-    let href = `${initGithubUrl}${url}`;
-    let actions = [
+    var actionsElement = document.createElement('div');
+    var repoLink = document.createElement('a');
+    var sync = document.createElement('a');
+    var trash = document.createElement('a');
+    var href = `${initGithubUrl}${url}`;
+    var actions = [
       {elem: repoLink, action: '', className: 'repo', href},
       {elem: sync, action: 'refresh', className: 'sync'},
       {elem: trash, action: 'remove', className: 'x'}
     ];
-    actions.forEach(({elem, action, className, href}) => {
+    actions.forEach(function({elem, action, className, href}) {
       elem.setAttribute('href', href || '#');
       elem.setAttribute('target', 'blank');
       elem.setAttribute('data-action', action);
@@ -313,11 +318,11 @@ function OctoShelf(options) {
       elem.setAttribute('data-url', url);
     });
 
-    let prListItems = document.createElement('ul');
+    var prListItems = document.createElement('ul');
     prListItems.setAttribute('class', 'prList');
 
     if (lastRepo) {
-      let firstChild = lastRepo.firstElementChild;
+      var firstChild = lastRepo.firstElementChild;
       article.style.cssText = lastRepo.getAttribute('style');
       repositoryInner.style.cssText = firstChild.getAttribute('style');
     }
@@ -329,7 +334,9 @@ function OctoShelf(options) {
       .appendChild(document.createTextNode(url));
 
     repositoryInner.appendChild(prListItems);
-    actions.forEach(({elem}) => actionsElement.appendChild(elem));
+    actions.forEach(function({elem}) {
+      actionsElement.appendChild(elem);
+    });
     repositoryInner.appendChild(actionsElement);
 
     // The Repo is built, lets append it!
@@ -349,8 +356,8 @@ function OctoShelf(options) {
    * @param {Element} placeholder - Placeholder Element
    */
   function updateRepository(repository) {
-    let {id, name, url, fullName, placeholderUpdated, prs} = repository;
-    let article = document.getElementById(id) ||
+    var {id, name, url, fullName, placeholderUpdated, prs} = repository;
+    var article = document.getElementById(id) ||
       document.querySelector(`[data-url="${url}"]`);
 
     if (!article) {
@@ -364,23 +371,23 @@ function OctoShelf(options) {
         article.setAttribute('id', id);
       }
 
-      let actions = article.querySelectorAll('[data-action]');
-      let actionSize = actions.length;
-      for (let index = 0; index < actionSize; index++) {
-        let action = actions[index];
+      var actions = article.querySelectorAll('[data-action]');
+      var actionSize = actions.length;
+      for (var index = 0; index < actionSize; index++) {
+        var action = actions[index];
         action.setAttribute('data-id', id);
       }
 
       // Swap out the title with a better one
-      let repoTitle = article.querySelector('.repo-title');
+      var repoTitle = article.querySelector('.repo-title');
       repoTitle.innerText = name;
       repoTitle.setAttribute('title', fullName);
 
       repository.placeholderUpdated = true;
     }
 
-    let prListItems = article.querySelector('.prList');
-    let pullRequestFragment = document.createDocumentFragment();
+    var prListItems = article.querySelector('.prList');
+    var pullRequestFragment = document.createDocumentFragment();
 
     if (prs.length > prResizeThreshold) {
       prListItems.classList.add('lotsOfPRs');
@@ -388,9 +395,9 @@ function OctoShelf(options) {
       prListItems.classList.remove('lotsOfPRs');
     }
 
-    prs.forEach(({id, title, url}) => {
-      let prListItem = document.getElementById(id);
-      let prMoreInfo;
+    prs.forEach(function({id, title, url}) {
+      var prListItem = document.getElementById(id);
+      var prMoreInfo;
       if (prListItem) {
         prMoreInfo = prListItem.querySelector('.prMoreInfo');
         prMoreInfo.innerText = title;
@@ -398,7 +405,7 @@ function OctoShelf(options) {
       }
 
       prListItem = document.createElement('li');
-      let prLink = document.createElement('a');
+      var prLink = document.createElement('a');
       prMoreInfo = document.createElement('span');
 
       prListItem.setAttribute('id', id);
@@ -436,7 +443,7 @@ function OctoShelf(options) {
    * @param {String} url - repositories have a data-url="" to target from
    */
   function removeRepository(url) {
-    let article = document.querySelector(`[data-url="${url}"]`);
+    var article = document.querySelector(`[data-url="${url}"]`);
     if (!article) {
       notify('Something went wrong');
       return;
@@ -452,8 +459,8 @@ function OctoShelf(options) {
    * @param {Array} ids - array of pull request ids
    */
   function animateNewPullRequests(ids) {
-    ids.forEach(id => {
-      let element = document.getElementById(id);
+    ids.forEach(function(id) {
+      var element = document.getElementById(id);
       if (!element) {
         return;
       }
@@ -472,12 +479,12 @@ function OctoShelf(options) {
     if (!isPageVisible) {
       return;
     }
-    newPRQueue.forEach(id => {
-      let element = document.getElementById(id);
+    newPRQueue.forEach(function(id) {
+      var element = document.getElementById(id);
       if (!element) {
         return;
       }
-      setTimeout(() => {
+      setTimeout(function() {
         element.classList.remove('newPullRequest');
       }, 1000);
     });
@@ -488,15 +495,15 @@ function OctoShelf(options) {
    * Update the rotation of the different repo bubbles
    */
   function updateRotations() {
-    let count = repoSection.childElementCount;
-    let rotation = 360 / count;
-    let current = 0;
+    var count = repoSection.childElementCount;
+    var rotation = 360 / count;
+    var current = 0;
 
-    let child = repoSection.firstElementChild;
+    var child = repoSection.firstElementChild;
     while (child) {
-      let rotateBy = current * rotation;
-      let transform = `rotate(${rotateBy}deg) translateY(-${centerDistance}px)`;
-      let innerTransform = `transform: rotate(-${rotateBy}deg);`;
+      var rotateBy = current * rotation;
+      var transform = `rotate(${rotateBy}deg) translateY(-${centerDistance}px)`;
+      var innerTransform = `transform: rotate(-${rotateBy}deg);`;
 
       child.style.cssText = `transform: ${transform};`;
       child.firstElementChild.style.cssText = innerTransform;
@@ -510,8 +517,11 @@ function OctoShelf(options) {
    * @param {String} notifyText - Text we want displayed
    * @param {Number} duration - duration that the notification will linger
    */
-  function notify(notifyText, duration = 1000) {
-    let notification = document.createElement('div');
+  function notify(notifyText, duration) {
+    if (duration) {
+      duration = 1000;
+    }
+    var notification = document.createElement('div');
     notification.setAttribute('class', 'notification');
 
     notifications
@@ -533,8 +543,8 @@ function OctoShelf(options) {
    * @param {String} params - Stringified object that contains a postData prop
    */
   function unwrapPostMessage(fn, msgType, params) {
-    let parsedParams = JSON.parse(params);
-    let postData = parsedParams.postData;
+    var parsedParams = JSON.parse(params);
+    var postData = parsedParams.postData;
     if (msgType !== 'log') {
       log(`[OctoShelf] "${msgType}" called with:`, postData);
     }
@@ -556,9 +566,9 @@ function OctoShelf(options) {
    * @param {String|Object} extraStuff - extra stuff to log inside message group
    */
   function log() {
-    let args = Array.from(arguments);
-    let message = args[0];
-    let otherMessages = args.slice(1);
+    var args = Array.from(arguments);
+    var message = args[0];
+    var otherMessages = args.slice(1);
     if (message instanceof Array) {
       otherMessages.push(message[1]);
       message = message[0];
@@ -567,7 +577,9 @@ function OctoShelf(options) {
     if (console && console.log) {
       if (console.group && otherMessages.length) {
         console.group(message);
-        otherMessages.forEach(msg => console.log(msg));
+        otherMessages.forEach(function(msg) {
+          console.log(msg);
+        });
         console.groupEnd(message);
         return;
       }
@@ -579,7 +591,10 @@ function OctoShelf(options) {
    * Post a message to the WebWorker telling it to start refreshing
    * @param {Number} delay - delay between each refresh
    */
-  function startRefreshing(delay = 1000) {
+  function startRefreshing(delay) {
+    if (!delay) {
+      delay = 1000;
+    }
     parsedPostMessage('startRefreshing', delay);
   }
 
@@ -595,7 +610,7 @@ function OctoShelf(options) {
    */
   function hasRefreshed() {
     refreshRateIcon.style.cssText = 'color: #61FF61;transform: scale(4);';
-    setTimeout(() => {
+    setTimeout(function() {
       refreshRateIcon.style.cssText = '';
     }, 500);
   }
@@ -605,7 +620,7 @@ function OctoShelf(options) {
    * @type {Worker}
    */
   appWorker.addEventListener('message', function({data: [msgType, msgData]}) {
-    let msgTypes = {
+    var msgTypes = {
       log,
       notify,
       hasRefreshed,
@@ -639,14 +654,14 @@ function OctoShelf(options) {
    * an empty div that has blur(10px), and slowly animate away that blur to 0.
    */
   function lazyLoadBackground() {
-    let img = document.createElement('img');
-    let imgSrc = '/images/background.jpg';
-    let now = Date.now();
+    var img = document.createElement('img');
+    var imgSrc = '/images/background.jpg';
+    var now = Date.now();
     img.setAttribute('src', imgSrc);
 
     img.onload = function() {
       appBackground.style.backgroundImage = `url(${imgSrc})`;
-      let loadTime = Date.now() - now;
+      var loadTime = Date.now() - now;
 
       /**
        * If the loadTime is less than 100ms, the background was likely cached.
@@ -657,7 +672,7 @@ function OctoShelf(options) {
         return appBackground.classList.add('loaded');
       }
 
-      setTimeout(() => {
+      setTimeout(function() {
         appBackground.classList.add('loaded');
       }, 1000);
     };
@@ -668,7 +683,9 @@ function OctoShelf(options) {
    * Example url: /?share=org/repo1,org/repo2,org/repo3
    */
   function loadSharedRepos() {
-    sharedRepos.filter(repo => repo).forEach(url => {
+    sharedRepos.filter(function(repo) {
+      return repo;
+    }).forEach(function(url) {
       addRepository(url);
     });
   }
@@ -678,9 +695,11 @@ function OctoShelf(options) {
    */
   (function init() {
     if (!initApiUrl || !initGithubUrl) {
-      let initVars = {initApiUrl, initGithubUrl};
-      let missing = Object.keys(initVars)
-        .filter(initVar => !initVars[initVar])
+      var initVars = {initApiUrl, initGithubUrl};
+      var missing = Object.keys(initVars)
+        .filter(function(initVar) {
+          return !initVars[initVar];
+        })
         .join(', ');
       return notify(`Several api vars were found missing: ${missing}`, 4000);
     }

@@ -1,0 +1,22 @@
+{
+  "name": "octoshelf",
+  "main": "index.js",
+  "version": "0.0.1",
+  "homepage": "https://github.com/OctoShelf/octoshelf",
+  "authors": [
+    "Tyler Stark <theirondeveloper@gmail.com>"
+  ],
+  "description": "Manage your pull requests with style",
+  "keywords": [
+    "Pull",
+    "Requests",
+    "Github",
+    "OctoShelf"
+  ],
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "es6-promise": "~3.2.2",
+    "fetch": "~1.0.0"
+  }
+}
