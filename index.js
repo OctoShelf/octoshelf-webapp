@@ -5,6 +5,29 @@
 
 'use strict';
 
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/assign
+if (typeof Object.assign != 'function') {
+  Object.assign = function(target) {
+    'use strict';
+    if (target == null) {
+      throw new TypeError('Cannot convert undefined or null to object');
+    }
+
+    target = Object(target);
+    for (var index = 1; index < arguments.length; index++) {
+      var source = arguments[index];
+      if (source != null) {
+        for (var key in source) {
+          if (Object.prototype.hasOwnProperty.call(source, key)) {
+            target[key] = source[key];
+          }
+        }
+      }
+    }
+    return target;
+  };
+}
+
 let express = require('express');
 let path = require('path');
 let ejs = require('ejs');
@@ -47,7 +70,11 @@ app.get('/', function (req, res) {
   let sharedRepos = query.share || '';
   let origin = req.protocol + '://' + req.get('host');
   let accessToken = getAccessToken(req);
-  let data = Object.assign({}, config, {origin, accessToken, sharedRepos});
+  let data = Object.assign({}, config, {
+    origin: origin,
+    accessToken: accessToken,
+    sharedRepos: sharedRepos
+  });
   res.render('index.ejs', data);
 });
 
@@ -56,10 +83,17 @@ app.get('/auth', function (req, res) {
   let query = req.query;
   let code = query.code || '';
   let accessToken = getAccessToken(req);
-  let data = Object.assign({}, { accessToken, origin });
+  let data = Object.assign({}, {
+    accessToken: accessToken,
+    origin: origin
+  });
   if (code) {
-    let body = Object.assign({}, tokenPayload, { code });
-    let opts = Object.assign({}, accessTokenOptions, { body });
+    let body = Object.assign({}, tokenPayload, {
+      code: code
+    });
+    let opts = Object.assign({}, accessTokenOptions, {
+      body: body
+    });
     return request(opts, function (error, response, body) {
       if (!error && response.statusCode == 200) {
         accessToken = body.access_token;
@@ -74,5 +108,5 @@ app.get('/auth', function (req, res) {
 
 let port = process.env.PORT || 5000;
 app.listen(port, function () {
-  console.log(`OctoShelf, http://localhost:${port}/`);
+  console.log('OctoShelf is starting');
 });
