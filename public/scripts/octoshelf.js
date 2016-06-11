@@ -9,9 +9,11 @@
  * if you are intending to access an enterprise github's api, you will need to
  * use a public access token generated from your corp's settings.
  *
+ * @param {Element} appElement - Elemnt that OctoShelf renders onto
  * @param {Object} options - OctoShelf options
+ * @param {Worker} appWorker - OctoShelf's Web Worker, in charge of fetching from Github's API
  */
-function OctoShelf(options) {
+export default function OctoShelf(appElement, options, appWorker) {
   const initAccessToken = options.initAccessToken;
   const initApiUrl = options.initApiUrl || 'https://api.github.com';
   const initGithubUrl = options.initGithubUrl || 'https://github.com/';
@@ -19,8 +21,6 @@ function OctoShelf(options) {
   const sharedReposString = options.sharedRepos || '';
   const sharedRepos = sharedReposString.split(',');
 
-  const appWorker = new Worker('./scripts/octo.worker.js');
-  const app = document.getElementById('octoshelf');
   const repoSection = document.getElementById('repoSection');
   const authStatus = document.getElementById('authStatus');
   const syncAll = document.getElementById('syncAll');
@@ -162,7 +162,7 @@ function OctoShelf(options) {
     });
     toggleViewType.addEventListener('click', function(event) {
       event.preventDefault();
-      app.classList.toggle('octoInline');
+      appElement.classList.toggle('octoInline');
     });
     shareToggle.addEventListener('click', function(event) {
       event.preventDefault();
@@ -236,7 +236,7 @@ function OctoShelf(options) {
     stylesheetHelper.sheet.insertRule(`.repository:after {${afterRule}}`, 0);
 
     let toggleInline = innerHeight < 550 || innerWidth < 500;
-    app.classList.toggle('octoInline', toggleInline);
+    appElement.classList.toggle('octoInline', toggleInline);
 
     updateRotations();
   }
