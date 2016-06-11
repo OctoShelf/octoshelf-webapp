@@ -324,7 +324,7 @@ a{ color: #fff}
     border-radius: 0;
     padding: 1rem;
 }
-.octoInline .bubble .repositoryInner {transform: none !important;}
+.octoInline .bubble .repositoryInner {transform: none !important;height: initial;}
 .octoInline .repo-title {margin-right: 1rem;width: inherit;}
 .octoInline .repository:after {display: none;}
 .octoInline + .infoPanel {margin-top: 0rem;}
