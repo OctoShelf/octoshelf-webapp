@@ -36,6 +36,16 @@ let config = require('./config/config.json');
 let session = require('express-session');
 const app = express();
 
+// Setup webpack dev middleware
+var webpackDevMiddleware = require('webpack-dev-middleware'),
+  webpack = require('webpack'),
+  webpackConfig = require('./webpack.config.js'),
+  compiler = webpack(webpackConfig);
+
+app.use(webpackDevMiddleware(compiler, {
+  publicPath: '/'
+}));
+
 const github_client_id = process.env.GITHUB_CLIENT_ID || '';
 const github_client_secret = process.env.GITHUB_CLIENT_SECRET || '';
 const personal_access_token = process.env.PERSONAL_ACCESS_TOKEN || '';

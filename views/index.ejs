@@ -145,15 +145,13 @@
         </ol>
     </section>
 </section>
-<script src="./scripts/octoshelf.js"></script>
 <script>
-    OctoShelf({
+    var hydratedConfig = {
         initAccessToken: '<%= accessToken %>',
-        initApiUrl: '<%= apiUrl %>',
-        initGithubUrl: '<%= githubUrl %>',
         sharedRepos: '<%= sharedRepos %>',
         origin: '<%= origin %>'
-    });
+    }
 </script>
+<script src="/app.js"></script>
 </body>
 </html>
