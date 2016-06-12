@@ -9,6 +9,9 @@
  */
 
 'use strict';
+
+import Peppermint from './peppermint';
+
 let repositories = [];
 let apiUrl = '';
 let githubUrl = '';
@@ -24,25 +27,16 @@ const repository = {
   fetchedDetails: false
 };
 
-// Its refreshing!
-const peppermint = {
-  refreshTimeout: null,
-  refreshFn(delay) {
-    log(`Refreshing at ${new Date()}`);
-    parsedPostMessage('hasRefreshed', '');
-    getAllRepoDetails();
-    this.refreshTimeout = setTimeout(() => this.refreshFn(delay), delay);
-  },
-  startRefreshing(delay) {
-    if (this.refreshTimeout) {
-      stopRefreshing();
-    }
-    this.refreshTimeout = setTimeout(() => this.refreshFn(delay), delay);
-  },
-  stopRefreshing() {
-    clearTimeout(this.refreshTimeout);
-  }
-};
+/**
+ * Its refreshing :D!
+ */
+function refreshFn() {
+  log(`Refreshing at ${new Date()}`);
+  parsedPostMessage('hasRefreshed', '');
+  getAllRepoDetails();
+}
+// the new is unnecessary, but linting gets mad
+const peppermint = new Peppermint(refreshFn);
 
 /**
  * Start the refreshing process
@@ -175,7 +169,7 @@ function getRepoDetails(repository) {
         repository.prs = prs.map(simplifyPR);
       })
       .catch(() => {
-        parsedPostMessage('notify', 'There was an error fetching pull requests');
+        parsedPostMessage('notify', 'Error fetching pull requests');
       })
       .then(() => {
         parsedPostMessage('updateRepository', repository);
@@ -196,6 +190,7 @@ function getRepoDetails(repository) {
       repository.fullName = full_name;
       repository.prs = simplePrs;
       repository.fetchedDetails = true;
+      return Promise.resolve(repository);
     })
     .catch(() => {
       removeRepo(url);
@@ -207,7 +202,7 @@ function getRepoDetails(repository) {
         parsedPostMessage('updateRepository', repository);
         parsedPostMessage('toggleLoadingRepository', [id, url, false]);
       }
-      return repository;
+      return Promise.resolve(repository);
     });
 }
 
@@ -282,12 +277,14 @@ function getAllRepoDetails() {
 /**
  * Given a url, call the getRepoDetails function
  * @param {String} url - url of a repo
+ * @return {Promse} repository or null
  */
 function getRepoDetailsByUrl(url) {
   let repository = repositories.find(repo => repo.url === url);
   if (repository) {
-    getRepoDetails(repository);
+    return getRepoDetails(repository);
   }
+  return Promise.resolve(null);
 }
 
 /**
@@ -295,12 +292,13 @@ function getRepoDetailsByUrl(url) {
  * @param {Function} fn - function to call
  * @param {Function} msgType - function name
  * @param {String} params - Stringified object that contains a postData prop
+ * @return {Function} - whatever function we executed
  */
 function unwrapPostMessage(fn, msgType, params) {
   let parsedParams = JSON.parse(params);
   let postData = parsedParams.postData;
   log(`[Worker] "${msgType}" called with:`, postData);
-  fn(postData);
+  return fn(postData);
 }
 
 /**
@@ -376,7 +374,21 @@ function getWorkerState() {
   return {repositories, accessToken};
 }
 
-self.addEventListener('message', function({data: [msgType, msgData]}) {
+/**
+ * Helper Test function that returns back what we set API values to be.
+ * @return {Object} Object containing Github API values
+ */
+function getAPIVariables() {
+  return {accessToken, apiUrl, githubUrl};
+}
+
+/**
+ * Event Handler for postMessages from OctoShelf
+ * @param {String} msgType - what function does OctoShelf want the worker to execute
+ * @param {String} msgData - what data is being passed to that worker
+ * @return {Function} the executed function
+ */
+function postMessageHandler({data: [msgType, msgData]}) {
   let msgTypes = {
     startRefreshing,
     stopRefreshing,
@@ -394,31 +406,28 @@ self.addEventListener('message', function({data: [msgType, msgData]}) {
     return unwrapPostMessage(msgTypes[msgType], msgType, msgData);
   }
   log(`"${msgType}" isn't part of the allowed functions`);
-});
+}
+
+self.addEventListener('message', postMessageHandler);
 
 // Exposing functions for avajs tests, only if module.exports is available
-try {
-  if (typeof module === 'object' && module.exports) {
-    module.exports = {
+module.exports = {
 
-      getWorkerState,
+  self,
+  getWorkerState,
+  getAPIVariables,
+  initAPIVariables,
+  postMessageHandler,
 
-      setAccessToken,
-      simplifyPR,
-      addRepo,
-      removeRepo,
-      fetchGithubApi,
-      fetchRepoDetails,
-      fetchRepoPulls,
-      fetchRepo,
-      getRepoDetails,
-      getAllRepoDetails,
-      getRepoDetailsByUrl
-    };
-  }
-} catch (e) {
-  /**
-   * I know I am being extra paranoid by try-catching this. But testing related
-   * code should never harm core experiences.
-   */
-}
+  setAccessToken,
+  simplifyPR,
+  addRepo,
+  removeRepo,
+  fetchGithubApi,
+  fetchRepoDetails,
+  fetchRepoPulls,
+  fetchRepo,
+  getRepoDetails,
+  getAllRepoDetails,
+  getRepoDetailsByUrl
+};
