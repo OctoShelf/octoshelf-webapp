@@ -1,0 +1,46 @@
+<section id="infoPanelDescription" class="infoPanel-description">
+    <h2>Welcome to OctoShelf!</h2>
+    <p>OctoShelf is here to help you manage pull requests across multiple repositories.</p>
+    <p>OctoShelf is powered by <a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage">LocalStorage</a>,
+        <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API">WebWorkers</a>,
+        <a href="https://developer.mozilla.org/en-US/docs/Web/API/notification">Notifications</a>,
+        and <a href="https://developer.github.com/v3/">Github's Api</a>.</p>
+
+    <a class="octoshelf-transparent" href="https://github.com/OctoShelf/octoshelf"></a>
+</section>
+<section class="infoPanel-example">
+    <h2>Enterprise Usage</h2>
+    <p>If you want to use OctoShelf for public Github, you're in the right place!</p>
+    <p>But, lets say you want this on an enterprise account. All you need to do is fork this repo, and make two changes.</p>
+    <ol class="infoPanel-steps">
+        <li>
+            Update config to point to your enterprise endpoints
+    <pre class="infoPanel-exampleCode">
+    <h3 class="infoPanel-exampleCode-header">/config/githubApi.json</h3>
+    {
+      "githubAuthUrl":  "", // request github access url (redirects back to /auth)
+      "githubTokenUrl": "", // retrieves access_token (called from /auth?code=xxx)
+      "apiUrl":         "", // root github api urls
+      "githubUrl":      ""  // root github repository urls
+    }
+    </pre>
+        </li>
+        <li>
+            Start the app with a public access token or a clientId and clientSecret
+    <pre class="infoPanel-exampleCode">
+    <h3 class="infoPanel-exampleCode-header">Starting the App</h3>
+    <span class="highlight">PERSONAL_ACCESS_TOKEN</span>=xxx npm start
+
+     - or -
+
+    <span class="highlight">GITHUB_CLIENT_ID</span>=xxx <span class="highlight">GITHUB_CLIENT_SECRET</span>=xxx npm start
+    </pre>
+        </li>
+    </ol>
+
+    By default, you won't see this usage guide. But, if you want to include it, you could start the app with:
+
+    <pre class="infoPanel-exampleCode-noHeader">
+    <span class="highlight">SHOW_APP_DESCRIPTION=true</span> npm start
+    </pre>
+</section>

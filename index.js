@@ -49,6 +49,7 @@ app.use(webpackDevMiddleware(compiler, {
 const github_client_id = process.env.GITHUB_CLIENT_ID || '';
 const github_client_secret = process.env.GITHUB_CLIENT_SECRET || '';
 const personal_access_token = process.env.PERSONAL_ACCESS_TOKEN || '';
+const showAppDescription = process.env.SHOW_APP_DESCRIPTION || false;
 
 const tokenPayload = {
   "client_id": github_client_id,
@@ -83,6 +84,7 @@ app.get('/', function (req, res) {
   let data = Object.assign({}, config, {
     origin: origin,
     accessToken: accessToken,
+    showAppDescription: showAppDescription,
     sharedRepos: sharedRepos
   });
   res.render('index.ejs', data);

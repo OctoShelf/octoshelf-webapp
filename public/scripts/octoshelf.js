@@ -155,15 +155,17 @@ export default function OctoShelf(appElement, options, appWorker) {
       event.preventDefault();
       requestNotifications();
     });
-    moreInfoToggle.addEventListener('click', function(event) {
-      event.preventDefault();
-      let height = window.innerHeight - window.scrollY - topPanelHeight;
-      for (let i = 0; i < height; i++) {
-        setTimeout(() => {
-          window.scrollBy(0, 1);
-        }, i);
-      }
-    });
+    if (moreInfoToggle) {
+      moreInfoToggle.addEventListener('click', function(event) {
+        event.preventDefault();
+        let height = window.innerHeight - window.scrollY - topPanelHeight;
+        for (let i = 0; i < height; i++) {
+          setTimeout(() => {
+            window.scrollBy(0, 1);
+          }, i);
+        }
+      });
+    }
     toggleViewType.addEventListener('click', function(event) {
       event.preventDefault();
       appElement.classList.toggle('octoInline');
