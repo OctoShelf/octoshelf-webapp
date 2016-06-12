@@ -1,7 +1,9 @@
 # [OctoShelf](http://www.octoshelf.com/)
+
 A Multi-Repo Pull Request Manager
 
-![](https://travis-ci.org/OctoShelf/octoshelf.svg) ![](https://coveralls.io/repos/github/OctoShelf/octoshelf/badge.svg?branch=master)
+![](https://travis-ci.org/OctoShelf/octoshelf.svg)
+[![Coverage Status](https://coveralls.io/repos/github/OctoShelf/octoshelf/badge.svg?branch=master)](https://coveralls.io/github/OctoShelf/octoshelf?branch=master)
 
 Ever find yourself tabbing between multiple repos across several orgs,
 trying to manage the constant flow of new pull requests?
