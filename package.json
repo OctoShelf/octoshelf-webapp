@@ -6,14 +6,14 @@
   "scripts": {
     "start": "node .",
     "lint": "eslint public/scripts/",
-    "coverage": "nyc --reporter=html npm test; nyc report",
+    "coverage": "nyc --reporter=html ava tests/",
+    "report": "nyc report",
     "check-coverage": "nyc check-coverage --lines 20 --functions 20 --branches 20",
-    "test": "ava tests/"
+    "test": "npm run coverage; npm run report; npm run check-coverage"
   },
   "pre-commit": [
     "lint",
-    "coverage",
-    "check-coverage"
+    "test"
   ],
   "repository": {
     "type": "git",

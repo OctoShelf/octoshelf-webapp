@@ -1,4 +1,7 @@
-# [OctoShelf](http://www.octoshelf.com/) - A Multi-Repo PR Manager
+# [OctoShelf](http://www.octoshelf.com/)
+A Multi-Repo Pull Request Manager
+
+![](https://travis-ci.org/OctoShelf/octoshelf.svg) ![](https://coveralls.io/repos/github/OctoShelf/octoshelf/badge.svg?branch=master)
 
 Ever find yourself tabbing between multiple repos across several orgs,
 trying to manage the constant flow of new pull requests?
@@ -6,7 +9,7 @@ trying to manage the constant flow of new pull requests?
 Cool, me too! OctoShelf was built to solve this exact issue!
 
 In a nut-shell, OctoShelf can be seen as a multi-repo PR manager. It displays
-open pull requests, and can be refreshed as often as you like.
+open pull requests, and notifies you as new pull requests come in.
 
 OctoShelf is powered by:
 
