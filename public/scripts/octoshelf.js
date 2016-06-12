@@ -29,16 +29,18 @@ export default function OctoShelf(appElement, options, appWorker) {
   const addRepoForm = document.getElementById('addRepoForm');
   const addRepoInput = document.getElementById('addRepoInput');
   const notifications = document.getElementById('notifications');
-  const refreshRateIcon = document.getElementById('refreshRateIcon');
-  const refreshRateOptions = document.getElementById('refreshRateOptions');
-  const requestNotifications = document.getElementById('requestNotifications');
+  const requestNotificationsElem = document.getElementById('requestNotifications');
   const appBackground = document.getElementById('appBackground');
+
+  const refreshRateToggle = document.getElementById('refreshRateToggle');
+  const refreshContent = document.getElementById('refreshContent');
+  const refreshRateOptions = document.getElementById('refreshRateOptions');
 
   const toggleViewType = document.getElementById('toggleViewType');
   const moreInfoToggle = document.getElementById('moreInfoToggle');
 
-  const shareWrapper = document.getElementById('shareWrapper');
   const shareContent = document.getElementById('shareContent');
+  const shareUrl = document.getElementById('shareUrl');
   const shareToggle = document.getElementById('shareToggle');
 
   const stylesheetHelper = document.createElement("style");
@@ -149,9 +151,9 @@ export default function OctoShelf(appElement, options, appWorker) {
       }
       return stopRefreshing();
     });
-    requestNotifications.addEventListener('click', function(event) {
+    requestNotificationsElem.addEventListener('click', function(event) {
       event.preventDefault();
-      requestNotifcations();
+      requestNotifications();
     });
     moreInfoToggle.addEventListener('click', function(event) {
       event.preventDefault();
@@ -166,17 +168,14 @@ export default function OctoShelf(appElement, options, appWorker) {
       event.preventDefault();
       appElement.classList.toggle('octoInline');
     });
+    refreshRateToggle.addEventListener('click', function(event) {
+      event.preventDefault();
+      refreshContent.classList.toggle('toggle');
+    });
     shareToggle.addEventListener('click', function(event) {
       event.preventDefault();
-      let child = repoSection.firstChild;
-      let urls = [];
-      while (child) {
-        urls.push(child.dataset.url);
-        child = child.nextSibling;
-      }
-      let url = window.location.origin + '?share=' + urls.join(',');
-      shareWrapper.classList.toggle('toggle');
-      shareContent.innerText = url;
+      updateShareLink();
+      shareContent.classList.toggle('toggle');
     });
 
     window.addEventListener('resize', function() {
@@ -196,9 +195,26 @@ export default function OctoShelf(appElement, options, appWorker) {
   }
 
   /**
+   * Update the sharable link (on add/remove of repos, as well as on toggle)
+   */
+  function updateShareLink() {
+    let child = repoSection.firstChild;
+    let urls = [];
+    while (child) {
+      urls.push(child.dataset.url);
+      child = child.nextSibling;
+    }
+    let url = window.location.origin;
+    if (urls.length) {
+      url += '?share=' + urls.join(',');
+    }
+    shareUrl.value = url;
+  }
+
+  /**
    * Request Notification Privileges from the end user
    */
-  function requestNotifcations() {
+  function requestNotifications() {
     Notification.requestPermission();
   }
 
@@ -337,6 +353,7 @@ export default function OctoShelf(appElement, options, appWorker) {
     // The Repo is built, lets append it!
     repoSection.appendChild(article);
     repoStateManager.add(url);
+    updateShareLink();
 
     // Now that we've added a placeholder, lets spin to win!
     // The 100ms delay adds a cool animation effect
@@ -445,6 +462,7 @@ export default function OctoShelf(appElement, options, appWorker) {
     }
     article.parentNode.removeChild(article);
     repoStateManager.remove(url);
+    updateShareLink();
 
     setTimeout(updateRotations, 100);
   }
@@ -571,9 +589,9 @@ export default function OctoShelf(appElement, options, appWorker) {
    * Subtle UI indication that a refresh has happened
    */
   function hasRefreshed() {
-    refreshRateIcon.style.cssText = 'color: #61FF61;transform: scale(4);';
+    refreshRateToggle.classList.add('hasRefreshed');
     setTimeout(() => {
-      refreshRateIcon.style.cssText = '';
+      refreshRateToggle.classList.remove('hasRefreshed');
     }, 500);
   }
 
