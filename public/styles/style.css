@@ -204,14 +204,13 @@ a{ color: #fff}
     background: #333;
     border-top:1px solid #ccc;
     color:#fff;
-    min-height: 100%;
     width:100%;
-    padding: 1rem;
+    padding: 0 1rem;
     position: relative;
     margin-top: -60px;
     text-align: left;
 }
-.infoPanel-topPanel {min-height: 3rem;}
+.infoPanel-topPanel {padding: 1rem 0;}
 .infoPanel .octicon {vertical-align: middle}
 .infoPanel-actions {border-left: 1px solid #fff;padding-left: 0.5rem;margin-left: 0.5rem;position: relative}
 .infoPanel-action {font-size: 1.2em;margin-left: 1rem;}
@@ -250,7 +249,8 @@ a{ color: #fff}
 }
 .infoPanel-description {text-align: center;}
 .infoPanel-description a {color: #333;}
-.infoPanel-exampleCode {
+.infoPanel-exampleCode,
+.infoPanel-exampleCode-noHeader {
     border: 1px solid #ccc;
     background: #fff;
     padding: 1rem 0;
@@ -259,7 +259,10 @@ a{ color: #fff}
 .infoPanel-exampleCode-header {
     margin: 0 1rem;
 }
-.highlight {background: rgba(255,255,0,0.5);padding: 0.5rem}
+.infoPanel-exampleCode-noHeader {
+    padding: 2rem 0 1rem;
+}
+.highlight {background: rgba(255,255,0,0.5);padding: 0.5rem;display: inline-block}
 .octoshelf-transparent {
     background: url('/images/octoshelf-link.png') #333 no-repeat;
     background-size: 75px;
@@ -281,13 +284,13 @@ a{ color: #fff}
 .refreshRate_moreInfo {
     background: #fff;
     color: #333;
-    width: 200px;
+    width: 300px;
     height: 0;
     padding: 0;
     overflow: hidden;
     position: absolute;
     bottom: 3rem;
-    left: 0;
+    right: 0;
     transition: all .5s ease;
 }
 .refreshRate_moreInfo.toggle {height: 120px;padding: 0.5rem;border: 1px solid #333;}
@@ -327,6 +330,7 @@ a{ color: #fff}
 }
 
 @media (max-width: 550px) {
+    .infoPanel {margin-top: 0}
     .tagline {display: none}
 }
 
