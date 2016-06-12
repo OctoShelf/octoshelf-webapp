@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html>
-<link>
 <head>
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1">
     <title>OctoShelf</title>
     <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
     <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
@@ -25,14 +24,14 @@
     <meta name="msapplication-TileColor" content="#da532c">
     <meta name="msapplication-TileImage" content="/mstile-144x144.png">
     <meta name="theme-color" content="#333333">
-    <link rel="stylesheet" type="text/css" href="./styles/octicons.css"></link>
-    <link rel="stylesheet" type="text/css" href="./styles/style.css"></link>
+    <link rel="stylesheet" type="text/css" href="./styles/octicons.css">
+    <link rel="stylesheet" type="text/css" href="./styles/style.css">
 </head>
 <body>
 <main id="octoshelf" class="app">
     <section id="addSection" class="app-prompt">
         <form id="addRepoForm" class="bubble">
-            <img class="octoshelf-icon" src="/images/octoshelf-icon.png" title="OctoShelf, a GitHub powered pull request manager" />
+            <img class="octoshelf-icon" src="/images/octoshelf-icon.png" alt="OctoShelf, a GitHub powered pull request manager" />
             <div class="addRepoInput-wrapper">
                 <div class="addRepoInput-prefix"><%= githubUrl %></div>
                 <input type="text" id="addRepoInput" class="addRepoInput-input" placeholder="Repository Url" />
@@ -58,17 +57,19 @@
 </main>
 <section class="infoPanel">
     <section class="infoPanel-topPanel">
-        <span>
-            <h1>OctoShelf</h1><span class="tagline">, <span class="tagline-githubPowered">a
+        <h1>OctoShelf</h1><span class="tagline">, <span class="tagline-githubPowered">a
             <a href="https://github.com" class="octicon octicon-logo-github"></a>
             powered</span> pull request manager
             </span>
-            <img class="octoshelf-icon" src="/images/octoshelf-icon.png"  title="OctoShelf, a GitHub powered pull request manager" />
-        </span>
+        <img class="octoshelf-icon" src="/images/octoshelf-icon.png" alt="OctoShelf, a GitHub powered pull request manager" />
         <span class="infoPanel-actions">
-            <span class="refreshRate_wrapper">
-                <span class="octicon octicon-clock refreshRate_icon" id="refreshRateIcon"></span>
-                <div class="refreshRate_moreInfo">
+            <a href="#" class="octicon octicon-clock infoPanel-action refreshRate-toggle" id="refreshRateToggle"></a>
+            <a href="#" class="octicon octicon-broadcast infoPanel-action notification-button" id="requestNotifications"></a>
+            <a href="#" id="toggleViewType" class="octicon octicon-three-bars infoPanel-action toggleViewType"></a>
+            <a href="#" id="shareToggle" class="octicon octicon-link infoPanel-action share-toggle"></a>
+            <a href="#" id="moreInfoToggle" class="octicon octicon-question infoPanel-action moreInfo-toggle"></a>
+            <span class="toggleContentContainer">
+                <span id="refreshContent" class="refreshRate_moreInfo">
                     <div>Refresh Rate</div>
                     <ul class="refreshRate_options" id="refreshRateOptions">
                         <li>
@@ -90,18 +91,12 @@
                             </label>
                         </li>
                     </ul>
-                </div>
+                </span>
+                <span id="shareContent" class="share-content">
+                    <span>Share These Repos:</span>
+                    <textarea class="share-urlInput" id="shareUrl" readonly onClick="this.setSelectionRange(0, this.value.length)"></textarea>
+                </span>
             </span>
-            <span class="notification-wrapper">
-                <a id="requestNotifications" href="#" class="octicon octicon-broadcast notification-button"></a>
-                <div class="notification-moreInfo">Allow Notifications?</div>
-            </span>
-            <a href="#" id="toggleViewType" class="octicon octicon-three-bars toggleViewType"></a>
-            <span id="shareWrapper" class="share-wrapper">
-                <a href="#" id="shareToggle" class="octicon octicon-link share-toggle"></a>
-                <span id="shareContent" class="share-content"></span>
-            </span>
-            <a href="#" id="moreInfoToggle" class="octicon octicon-question moreInfo-toggle"></a>
         </span>
     </section>
     <section id="infoPanelDescription" class="infoPanel-description">

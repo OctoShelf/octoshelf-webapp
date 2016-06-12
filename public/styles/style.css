@@ -70,21 +70,6 @@ a{ color: #fff}
 .action {vertical-align: text-top;margin: 5px}
 .action:hover {text-shadow: 0 0 10px #fff}
 
-.share-wrapper {}
-.share-content {
-    background: #fff;
-    color: #333;
-    display: none;
-    position: absolute;
-    right: 0;
-    bottom: 3rem;
-    font-size: 0.5rem;
-    padding: 1rem;
-}
-.share-wrapper.toggle .share-content {
-    display: block;
-}
-
 /* Magical overrides */
 .prList.lotsOfPRs .prListItem {height: 15px;width: 15px;margin: 1px;}
 .prList.lotsOfPRs .prLink {font-size: 0.5em;padding:0;top: -3px}
@@ -226,9 +211,33 @@ a{ color: #fff}
     margin-top: -60px;
     text-align: left;
 }
+.infoPanel-topPanel {min-height: 3rem;}
 .infoPanel .octicon {vertical-align: middle}
 .infoPanel-actions {border-left: 1px solid #fff;padding-left: 0.5rem;margin-left: 0.5rem;position: relative}
-.infoPanel-topPanel {min-height: 3rem;}
+.infoPanel-action {font-size: 1.2em;margin-left: 1rem;}
+
+
+.share-content {
+    background: #fff;
+    color: #333;
+    position: absolute;
+    height: 0;
+    width: 300px;
+    right: 0;
+    bottom: 3rem;
+    font-size: 0.5rem;
+    padding: 0;
+    overflow: hidden;
+    transition: all .5s ease;
+}
+.share-content.toggle {
+    padding: 0.5rem;
+    height: 4rem;
+}
+.share-urlInput {
+    resize: none;
+    width: 100%;
+}
 
 .infoPanel-description,
 .infoPanel-example {
@@ -267,45 +276,26 @@ a{ color: #fff}
 }
 .moreinfo-githubLink {color: #333;}
 
-.refreshRate_wrapper {
-    cursor: pointer;
-    text-align: left
-}
-.refreshRate_icon {transition: all .5s ease;}
+.refreshRate-toggle {transition: all .5s ease;}
+.refreshRate-toggle.hasRefreshed {color: #61FF61;transform: scale(4);}
 .refreshRate_moreInfo {
     background: #fff;
     color: #333;
-    width: 120px;
+    width: 200px;
     height: 0;
     padding: 0;
     overflow: hidden;
     position: absolute;
-    bottom: 1rem;
-    right: -1rem;
+    bottom: 3rem;
+    left: 0;
     transition: all .5s ease;
 }
-.refreshRate_wrapper:hover .refreshRate_moreInfo {height: 120px;padding: 0.5rem;border: 1px solid #333;}
+.refreshRate_moreInfo.toggle {height: 120px;padding: 0.5rem;border: 1px solid #333;}
 .refreshRate_options {list-style: none;padding: 0;margin: 0}
 .refreshRate_option {cursor: pointer;display:block;position: relative;}
 .refreshRate_input {position: absolute;top: 3px;left: 3px;}
 .refreshRate_inputDisplay {display: inline-block;width: 100%;padding: 5px 0 5px 1.5rem;}
 .refreshRate_input:checked + .refreshRate_inputDisplay {background: #3F51B5;color: #fff;}
-
-.notification-wrapper {position: relative}
-.notification-moreInfo {
-    background: #fff;
-    border: 0;
-    color: #333;
-    width: 150px;
-    height: 0;
-    transition: all .5s ease;
-    overflow: hidden;
-    position: absolute;
-    bottom: 1.5rem;
-    right: -1.5rem;
-}
-.notification-wrapper:hover .notification-moreInfo {height: 2rem;padding: 5px;border: 1px solid #333;}
-
 
 /* Inline Experience */
 .octoInline {padding: 0.5rem;}
@@ -327,14 +317,19 @@ a{ color: #fff}
 .octoInline .bubble .repositoryInner {transform: none !important;height: initial;}
 .octoInline .repo-title {margin-right: 1rem;width: inherit;}
 .octoInline .repository:after {display: none;}
-.octoInline + .infoPanel {margin-top: 0rem;}
 
-@media (max-width: 600px) {
+@media (max-width: 700px) {
+    .infoPanel {padding:  1rem 0.5rem}
     .tagline-githubPowered {display: none}
     .infoPanel-steps {padding-left: 0.5rem;}
+    .infoPanel-action {margin-left: 0.5rem;}
     .tokenNeeded-anchor:hover .tokenNeeded-content {left: 0;width: 100%;height: unset;}
 }
 
-@media (max-width: 400px) {
+@media (max-width: 550px) {
     .tagline {display: none}
+}
+
+@media (max-width: 400px) {
+    .infoPanel-action {margin-left: 5px;}
 }
