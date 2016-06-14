@@ -1,6 +1,8 @@
 'use strict';
 
-import {log} from './utiltities';
+import {log, notify} from './utiltities';
+import {loadActionPanelListeners, hasRefreshed, updateShareLink} from './actionPanel';
+import {loadAnimations, updateRotations} from './animations';
 
 /* eslint no-unused-vars: ["error", { "varsIgnorePattern": "OctoShelf" }] */
 /**
@@ -28,30 +30,10 @@ export default function OctoShelf(appElement, options, appWorker) {
   const syncAll = document.getElementById('syncAll');
   const addRepoForm = document.getElementById('addRepoForm');
   const addRepoInput = document.getElementById('addRepoInput');
-  const notifications = document.getElementById('notifications');
-  const requestNotificationsElem = document.getElementById('requestNotifications');
-  const appBackground = document.getElementById('appBackground');
 
-  const refreshRateToggle = document.getElementById('refreshRateToggle');
-  const refreshContent = document.getElementById('refreshContent');
-  const refreshRateOptions = document.getElementById('refreshRateOptions');
-
-  const toggleViewType = document.getElementById('toggleViewType');
-  const moreInfoToggle = document.getElementById('moreInfoToggle');
-
-  const shareContent = document.getElementById('shareContent');
-  const shareUrl = document.getElementById('shareUrl');
-  const shareToggle = document.getElementById('shareToggle');
-
-  const stylesheetHelper = document.createElement("style");
-  const topPanelHeight = 60;
-  const inputWrapperSize = 130;
-  const startingRefreshRate = 60000;
-  const bubbleSize = 150;
   const prResizeThreshold = 8;
   let isPageVisible = true;
   let newPRQueue = [];
-  let centerDistance = 0;
 
   /**
    * RepoStateManager - Abstracts away persisting repository urls and CRUDs.
@@ -86,10 +68,9 @@ export default function OctoShelf(appElement, options, appWorker) {
   };
 
   /**
-   * Load the App event listeners
+   * Load Event Listeners specific to OctoShelf
    */
-  function loadEventListeners() {
-    let resizeDebounce;
+  function loadAppEventListeners() {
     addRepoForm.addEventListener('submit', function(event) {
       event.preventDefault();
       addRepository(addRepoInput.value);
@@ -143,134 +124,11 @@ export default function OctoShelf(appElement, options, appWorker) {
         actionMap[action]();
       }
     });
-    refreshRateOptions.addEventListener('change', function(event) {
-      let {value} = event.target;
-      let delay = Number(value);
-      if (delay) {
-        return startRefreshing(delay);
-      }
-      return stopRefreshing();
-    });
-    requestNotificationsElem.addEventListener('click', function(event) {
-      event.preventDefault();
-      requestNotifications();
-    });
-    if (moreInfoToggle) {
-      moreInfoToggle.addEventListener('click', function(event) {
-        event.preventDefault();
-        let height = window.innerHeight - window.scrollY - topPanelHeight;
-        for (let i = 0; i < height; i++) {
-          setTimeout(() => {
-            window.scrollBy(0, 1);
-          }, i);
-        }
-      });
-    }
-    toggleViewType.addEventListener('click', function(event) {
-      event.preventDefault();
-      appElement.classList.toggle('octoInline');
-    });
-    refreshRateToggle.addEventListener('click', function(event) {
-      event.preventDefault();
-      refreshContent.classList.toggle('toggle');
-    });
-    shareToggle.addEventListener('click', function(event) {
-      event.preventDefault();
-      updateShareLink();
-      shareContent.classList.toggle('toggle');
-    });
-
-    window.addEventListener('resize', function() {
-      if (resizeDebounce) {
-        clearTimeout(resizeDebounce);
-      }
-
-      resizeDebounce = setTimeout(function(innerHeight, innerWidth) {
-        updateBubbleStyles(innerHeight, innerWidth);
-      }, 30, window.innerHeight, window.innerWidth);
-    });
     window.addEventListener("visibilitychange", function() {
       isPageVisible = document.visibilityState !== 'hidden';
       parsedPostMessage('pageVisibilityChanged', isPageVisible);
       removeNewPullRequestAnimations();
     });
-  }
-
-  /**
-   * Update the sharable link (on add/remove of repos, as well as on toggle)
-   */
-  function updateShareLink() {
-    let child = repoSection.firstChild;
-    let urls = [];
-    while (child) {
-      urls.push(child.dataset.url);
-      child = child.nextSibling;
-    }
-    let url = window.location.origin;
-    if (urls.length) {
-      url += '?share=' + urls.join(',');
-    }
-    shareUrl.value = url;
-  }
-
-  /**
-   * Request Notification Privileges from the end user
-   */
-  function requestNotifications() {
-    Notification.requestPermission();
-  }
-
-  /**
-   * Update Bubble Styles by injecting new css rules
-   * @param {Number} innerHeight - height of the window
-   * @param {Number} innerWidth - width of the window
-   */
-  function updateBubbleStyles(innerHeight, innerWidth) {
-    let modifiedHeight = innerHeight - 40;
-    let bubbleModify = bubbleSize / 2;
-    let top = (innerHeight / 2) - bubbleModify - 40;
-    let left = (innerWidth / 2) - bubbleModify;
-
-    let hDistance = (modifiedHeight / 2) - (bubbleSize * 2 / 3);
-    let wDistance = (innerWidth / 2) - (bubbleSize * 2 / 3);
-    centerDistance = hDistance < wDistance ? hDistance : wDistance;
-
-    while (stylesheetHelper.sheet.cssRules.length) {
-      if (stylesheetHelper.sheet.removeRule) {
-        stylesheetHelper.sheet.removeRule(0);
-      } else if (stylesheetHelper.sheet.deleteRule) {
-        stylesheetHelper.sheet.deleteRule(0);
-      }
-    }
-    let size = bubbleSize;
-    let dims = ['height', 'width'].map(prop => prop + `:${size}px`).join(';');
-    let pos = `top:${top}px;left:${left}px;`;
-    let wrapSelector = '.app-prompt, .app-repositoriesWrapper';
-    let wrapRule = `transition: all .5s ease;${pos};${dims}`;
-
-    let afterHeight = centerDistance - (bubbleSize / 2);
-    let afterRule = `top: ${size}px;height:${afterHeight}px`;
-
-    stylesheetHelper.sheet.insertRule(`${wrapSelector} {${wrapRule}}`, 0);
-    stylesheetHelper.sheet.insertRule(`.bubble {${dims}}`, 0);
-    stylesheetHelper.sheet.insertRule(`.repository:after {${afterRule}}`, 0);
-
-    let toggleInline = innerHeight < 550 || innerWidth < 500;
-    appElement.classList.toggle('octoInline', toggleInline);
-
-    updateRotations();
-  }
-
-  /**
-   * Github's Prefix is dynamic. To account for corp github urls,
-   * when the page loads we auto resize the font-size to make sure it fits
-   */
-  function resizeGitubPrefix() {
-    let prefix = document.querySelector('.addRepoInput-prefix');
-    let prefixWidth = prefix.scrollWidth;
-    let sizeRatio = ~~((inputWrapperSize / (prefixWidth + 10)) * 100) / 100;
-    let fontSize = sizeRatio < 1 ? sizeRatio : 1;
-    prefix.style.fontSize = `${fontSize}rem`;
   }
 
   /**
@@ -507,48 +365,6 @@ export default function OctoShelf(appElement, options, appWorker) {
   }
 
   /**
-   * Update the rotation of the different repo bubbles
-   */
-  function updateRotations() {
-    let count = repoSection.childElementCount;
-    let rotation = 360 / count;
-    let current = 0;
-
-    let child = repoSection.firstElementChild;
-    while (child) {
-      let rotateBy = current * rotation;
-      let transform = `rotate(${rotateBy}deg) translateY(-${centerDistance}px)`;
-      let innerTransform = `transform: rotate(-${rotateBy}deg);`;
-
-      child.style.cssText = `transform: ${transform};`;
-      child.firstElementChild.style.cssText = innerTransform;
-      current++;
-      child = child.nextElementSibling;
-    }
-  }
-
-  /**
-   * Notify the user something happened
-   * @param {String} notifyText - Text we want displayed
-   * @param {Number} duration - duration that the notification will linger
-   */
-  function notify(notifyText, duration = 1000) {
-    let notification = document.createElement('div');
-    notification.setAttribute('class', 'notification');
-
-    notifications
-      .appendChild(notification)
-      .appendChild(document.createTextNode(notifyText));
-
-    setTimeout(function() {
-      notification.classList.add('fadeOut');
-      setTimeout(function() {
-        notifications.removeChild(notification);
-      }, 500);
-    }, duration);
-  }
-
-  /**
    * Unwrap PostMessages
    * @param {Function} fn - function to call
    * @param {Function} msgType - function name
@@ -570,31 +386,6 @@ export default function OctoShelf(appElement, options, appWorker) {
    */
   function parsedPostMessage(messageType, postData) {
     appWorker.postMessage([messageType, JSON.stringify({postData})]);
-  }
-
-  /**
-   * Post a message to the WebWorker telling it to start refreshing
-   * @param {Number} delay - delay between each refresh
-   */
-  function startRefreshing(delay = 1000) {
-    parsedPostMessage('startRefreshing', delay);
-  }
-
-  /**
-   * Post a message to the WebWorker telling it to stop refreshing
-   */
-  function stopRefreshing() {
-    parsedPostMessage('stopRefreshing', '');
-  }
-
-  /**
-   * Subtle UI indication that a refresh has happened
-   */
-  function hasRefreshed() {
-    refreshRateToggle.classList.add('hasRefreshed');
-    setTimeout(() => {
-      refreshRateToggle.classList.remove('hasRefreshed');
-    }, 500);
   }
 
   /**
@@ -628,39 +419,6 @@ export default function OctoShelf(appElement, options, appWorker) {
   }
 
   /**
-   * Lazy Load a sweet background image into focus.
-   *
-   * We start off with a low-res blurred image on the `body` tag that gets loaded
-   * very quickly. We then load a high-res background image to an empty `img` tag.
-   * Once the image has finished loading, we insert the image as a background to
-   * an empty div that has blur(10px), and slowly animate away that blur to 0.
-   */
-  function lazyLoadBackground() {
-    let img = document.createElement('img');
-    let imgSrc = '/images/background.jpg';
-    let now = Date.now();
-    img.setAttribute('src', imgSrc);
-
-    img.onload = function() {
-      appBackground.style.backgroundImage = `url(${imgSrc})`;
-      let loadTime = Date.now() - now;
-
-      /**
-       * If the loadTime is less than 100ms, the background was likely cached.
-       * Slowly unbluring the background is a cool nice animation, but if they've
-       * seen it once before, we should limit the duration of the blurry state.
-       */
-      if (loadTime < 1000) {
-        return appBackground.classList.add('loaded');
-      }
-
-      setTimeout(() => {
-        appBackground.classList.add('loaded');
-      }, 1000);
-    };
-  }
-
-  /**
    * If the url has the share queryParam, pass in each of the repos.
    * Example url: /?share=org/repo1,org/repo2,org/repo3
    */
@@ -681,14 +439,13 @@ export default function OctoShelf(appElement, options, appWorker) {
         .join(', ');
       return notify(`Several api vars were found missing: ${missing}`, 4000);
     }
-    document.head.appendChild(stylesheetHelper);
-    lazyLoadBackground();
     initAPIVariables({initAccessToken, initApiUrl, initGithubUrl});
-    updateBubbleStyles(window.innerHeight, window.innerWidth);
-    resizeGitubPrefix();
+
     repoStateManager.fetch();
     loadSharedRepos();
-    startRefreshing(startingRefreshRate);
-    loadEventListeners();
+
+    loadAnimations(appElement);
+    loadActionPanelListeners(appElement, parsedPostMessage);
+    loadAppEventListeners();
   })();
 }

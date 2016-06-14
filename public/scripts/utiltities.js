@@ -23,3 +23,25 @@ export function log() {
     console.log(message);
   }
 }
+
+/**
+ * Notify the user something happened
+ * @param {String} notifyText - Text we want displayed
+ * @param {Number} duration - duration that the notification will linger
+ */
+export function notify(notifyText, duration = 1000) {
+  let notifications = document.getElementById('notifications');
+  let notification = document.createElement('div');
+  notification.setAttribute('class', 'notification');
+
+  notifications
+    .appendChild(notification)
+    .appendChild(document.createTextNode(notifyText));
+
+  setTimeout(function() {
+    notification.classList.add('fadeOut');
+    setTimeout(function() {
+      notifications.removeChild(notification);
+    }, 500);
+  }, duration);
+}
