@@ -210,7 +210,7 @@ a{ color: #fff}
     margin-top: -60px;
     text-align: left;
 }
-.infoPanel-topPanel {padding: 1rem 0;}
+.infoPanel-actionPanel {padding: 1rem 0;}
 .infoPanel .octicon {vertical-align: middle}
 .infoPanel-actions {border-left: 1px solid #fff;padding-left: 0.5rem;margin-left: 0.5rem;position: relative}
 .infoPanel-action {font-size: 1.2em;margin-left: 1rem;}
