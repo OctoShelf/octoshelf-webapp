@@ -31,8 +31,7 @@ const repository = {
  * Its refreshing :D!
  */
 function refreshFn() {
-  log(`Refreshing at ${new Date()}`);
-  parsedPostMessage('hasRefreshed', '');
+  parsedPostMessage('hasRefreshed', `${new Date()}`);
   getAllRepoDetails();
 }
 // the new is unnecessary, but linting gets mad
@@ -290,14 +289,12 @@ function getRepoDetailsByUrl(url) {
 /**
  * Unwrap PostMessages
  * @param {Function} fn - function to call
- * @param {Function} msgType - function name
  * @param {String} params - Stringified object that contains a postData prop
  * @return {Function} - whatever function we executed
  */
-function unwrapPostMessage(fn, msgType, params) {
+function unwrapPostMessage(fn, params) {
   let parsedParams = JSON.parse(params);
-  let postData = parsedParams.postData;
-  log(`[Worker] "${msgType}" called with:`, postData);
+  let {postData} = parsedParams;
   return fn(postData);
 }
 
@@ -388,7 +385,7 @@ function getAPIVariables() {
  * @param {String} msgData - what data is being passed to that worker
  * @return {Function} the executed function
  */
-function postMessageHandler({data: [msgType, msgData]}) {
+function postMessageHandler({data: [fnName, msgData]}) {
   let msgTypes = {
     startRefreshing,
     stopRefreshing,
@@ -402,10 +399,10 @@ function postMessageHandler({data: [msgType, msgData]}) {
     addRepo
   };
 
-  if (msgTypes[msgType]) {
-    return unwrapPostMessage(msgTypes[msgType], msgType, msgData);
+  if (msgTypes[fnName]) {
+    return unwrapPostMessage(msgTypes[fnName], msgData);
   }
-  log(`"${msgType}" isn't part of the allowed functions`);
+  log(`"${fnName}" isn't part of the allowed functions`);
 }
 
 self.addEventListener('message', postMessageHandler);
