@@ -46,7 +46,7 @@ test.afterEach(t => {
 
 
 test('setting worker variables', t => {
-  worker.initAPIVariables({ initAccessToken: 'a', initApiUrl: 'b', initGithubUrl: 'c'});
+  worker.initAPIVariables({ accessToken: 'a', apiUrl: 'b', githubUrl: 'c'});
   let state = worker.getAPIVariables();
   t.deepEqual(state, {accessToken: 'a', apiUrl: 'b', githubUrl: 'c'});
 });
@@ -113,9 +113,9 @@ test('web worker removeRepo', t => {
   let worker = require(workerPath);
 
   worker.initAPIVariables({
-    initAccessToken: 'asdf',
-    initApiUrl: 'https://api.github.com',
-    initGithubUrl: 'https://github.com/'
+    accessToken: 'asdf',
+    apiUrl: 'https://api.github.com',
+    githubUrl: 'https://github.com/'
   });
   worker.addRepo('test').then(() => {
     let state = worker.getWorkerState();
