@@ -12,13 +12,11 @@
 import {workerPostMessage, registerWorkerEventHandles} from './conductor';
 const postMessageToWorker = workerPostMessage('ActionPanel');
 
-const repoSection = document.getElementById('repoSection');
 const requestNotifications = document.getElementById('requestNotifications');
 const refreshRateToggle = document.getElementById('refreshRateToggle');
 const refreshContent = document.getElementById('refreshContent');
 const refreshRateOptions = document.getElementById('refreshRateOptions');
 const shareContent = document.getElementById('shareContent');
-const shareUrl = document.getElementById('shareUrl');
 const shareToggle = document.getElementById('shareToggle');
 const toggleViewType = document.getElementById('toggleViewType');
 const moreInfoToggle = document.getElementById('moreInfoToggle');
@@ -85,6 +83,7 @@ export function loadActionPanelListeners(appElement) {
  * Subtle UI indication that a refresh has happened
  */
 export function hasRefreshed() {
+  const refreshRateToggle = document.getElementById('refreshRateToggle');
   refreshRateToggle.classList.add('hasRefreshed');
   setTimeout(() => {
     refreshRateToggle.classList.remove('hasRefreshed');
@@ -93,15 +92,19 @@ export function hasRefreshed() {
 
 /**
  * Update the sharable link (on add/remove of repos, as well as on toggle)
+ * @param {String} origin - root url (precedes the repos query params)
  */
-export function updateShareLink() {
+export function updateShareLink(origin = window.location.origin) {
+  let repoSection = document.getElementById('repoSection');
+  let shareUrl = document.getElementById('shareUrl');
+
   let child = repoSection.firstChild;
   let urls = [];
   while (child) {
-    urls.push(child.dataset.url);
+    urls.push(child.getAttribute('data-url'));
     child = child.nextSibling;
   }
-  let url = window.location.origin;
+  let url = origin;
   if (urls.length) {
     url += '?share=' + urls.join(',');
   }
