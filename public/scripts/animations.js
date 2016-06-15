@@ -1,6 +1,8 @@
 /**
  * Animations - Animations are in charge of... animating, things. These functions
  * are generally self-contained and don't have any impact on the app state.
+ *
+ * These functions only provide visual feedback, so excluded from unit tests.
  */
 
 const stylesheetHelper = document.createElement("style");

@@ -375,19 +375,17 @@ function loadSharedRepos() {
 /**
  * OctoShelf, a Multi-Repo PR Manager
  *
- * If you call OctoShelf without any of these defined, the app will still work.
- * But, without an access_token you will be limited to 60 calls per hour, and
- * if you are intending to access an enterprise github's api, you will need to
- * use a public access token generated from your corp's settings.
- *
  * @param {Object} options - OctoShelf options
+ *
+ * If you call OctoShelf without any options defined, the app will still work,
+ * it will simply use public github api urls as its defaults.
  */
 export default function OctoShelf(options) {
-  accessToken = options.initAccessToken || accessToken;
-  apiUrl = options.initApiUrl || apiUrl;
-  githubUrl = options.initGithubUrl || githubUrl;
-  origin = options.initOrigin || origin;
-  sharedReposString = options.initSharedRepos || sharedReposString;
+  accessToken = options.accessToken || accessToken;
+  apiUrl = options.apiUrl || apiUrl;
+  githubUrl = options.githubUrl || githubUrl;
+  origin = options.origin || origin;
+  sharedReposString = options.sharedRepos || sharedReposString;
   sharedRepos = sharedReposString.split(',');
 
   /**
