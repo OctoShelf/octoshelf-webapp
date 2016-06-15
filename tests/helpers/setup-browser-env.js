@@ -3,3 +3,7 @@ global.window = document.defaultView;
 global.navigator = window.navigator;
 global.Promise = window.Promise;
 global.fetch = () => {};
+global.localStorage = {
+  getItem(){},
+  setItem(){}
+};

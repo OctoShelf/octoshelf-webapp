@@ -352,14 +352,12 @@ function pageVisibilityChanged(isVisible) {
 
 /**
  * Init a bunch of api variables so we can access github's api
- * @param {String} initAccessToken - github access token
- * @param {String} initApiUrl - github api url, which differs for corp accounts
- * @param {String} initGithubUrl - github root url
+ * @param {Object} apiVariables - new api variables
  */
-function initAPIVariables({initAccessToken, initApiUrl, initGithubUrl}) {
-  accessToken = initAccessToken;
-  apiUrl = initApiUrl;
-  githubUrl = initGithubUrl;
+function initAPIVariables(apiVariables) {
+  accessToken = apiVariables.accessToken;
+  apiUrl = apiVariables.apiUrl;
+  githubUrl = apiVariables.githubUrl;
 }
 
 /**
