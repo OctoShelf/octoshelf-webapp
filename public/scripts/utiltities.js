@@ -48,5 +48,4 @@ export function notify(notifyText, duration = 1000) {
   }, duration);
 }
 
-//
 registerWorkerEventHandles('Utility', {log, notify});

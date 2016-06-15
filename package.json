@@ -8,7 +8,7 @@
     "lint": "eslint public/scripts/",
     "coverage": "nyc --reporter=html ava tests/",
     "report": "nyc report",
-    "check-coverage": "nyc check-coverage --lines 40 --functions 36 --branches 11",
+    "check-coverage": "nyc check-coverage --lines 45 --functions 40 --branches 20",
     "test": "npm run coverage; npm run report; npm run check-coverage"
   },
   "pre-commit": [
