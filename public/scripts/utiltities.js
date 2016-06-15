@@ -1,4 +1,6 @@
 
+import {registerWorkerEventHandles} from './conductor';
+
 /**
  * Log a message to console (if console exists)
  * @param {String} message - message to log (or group)
@@ -45,3 +47,6 @@ export function notify(notifyText, duration = 1000) {
     }, 500);
   }, duration);
 }
+
+//
+registerWorkerEventHandles('Utility', {log, notify});

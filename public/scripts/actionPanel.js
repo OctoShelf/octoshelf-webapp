@@ -9,6 +9,9 @@
  *  toggling sharing the current repos
  */
 
+import {workerPostMessage, registerWorkerEventHandles} from './conductor';
+const postMessageToWorker = workerPostMessage('ActionPanel');
+
 const repoSection = document.getElementById('repoSection');
 const requestNotifications = document.getElementById('requestNotifications');
 const refreshRateToggle = document.getElementById('refreshRateToggle');
@@ -35,14 +38,14 @@ function requestNotificationPermission() {
  * @param {Element} appElement - The main OctoShelf element
  * @param {Function} parsedPostMessage - helper postMessage-to-worker function
  */
-export function loadActionPanelListeners(appElement, parsedPostMessage) {
+export function loadActionPanelListeners(appElement) {
   refreshRateOptions.addEventListener('change', function(event) {
     let {value} = event.target;
     let delay = Number(value);
     if (delay) {
-      return parsedPostMessage('startRefreshing', delay);
+      return postMessageToWorker('startRefreshing', delay);
     }
-    return parsedPostMessage('stopRefreshing', '');
+    return postMessageToWorker('stopRefreshing', '');
   });
   requestNotifications.addEventListener('click', function(event) {
     event.preventDefault();
@@ -75,7 +78,7 @@ export function loadActionPanelListeners(appElement, parsedPostMessage) {
     shareContent.classList.toggle('toggle');
   });
 
-  parsedPostMessage('startRefreshing', startingRefreshRate);
+  postMessageToWorker('startRefreshing', startingRefreshRate);
 }
 
 /**
@@ -104,3 +107,5 @@ export function updateShareLink() {
   }
   shareUrl.value = url;
 }
+
+registerWorkerEventHandles('ActionPanel', {hasRefreshed});

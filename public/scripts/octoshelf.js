@@ -1,8 +1,11 @@
 'use strict';
 
-import {log, notify} from './utiltities';
-import {loadActionPanelListeners, hasRefreshed, updateShareLink} from './actionPanel';
+import {notify} from './utiltities';
+import {loadActionPanelListeners, updateShareLink} from './actionPanel';
 import {loadAnimations, updateRotations} from './animations';
+
+import {workerPostMessage, registerWorkerEventHandles} from './conductor';
+const postMessageToWorker = workerPostMessage('OctoShelf');
 
 /* eslint no-unused-vars: ["error", { "varsIgnorePattern": "OctoShelf" }] */
 /**
@@ -15,9 +18,8 @@ import {loadAnimations, updateRotations} from './animations';
  *
  * @param {Element} appElement - Elemnt that OctoShelf renders onto
  * @param {Object} options - OctoShelf options
- * @param {Worker} appWorker - OctoShelf's Web Worker, in charge of fetching from Github's API
  */
-export default function OctoShelf(appElement, options, appWorker) {
+export default function OctoShelf(appElement, options) {
   const initAccessToken = options.initAccessToken;
   const initApiUrl = options.initApiUrl || 'https://api.github.com';
   const initGithubUrl = options.initGithubUrl || 'https://github.com/';
@@ -97,7 +99,7 @@ export default function OctoShelf(appElement, options, appWorker) {
           }
 
           let token = event.data;
-          parsedPostMessage('setAccessToken', token);
+          postMessageToWorker('setAccessToken', token);
           authStatus.parentNode.removeChild(authStatus);
           clearTimeout(timeout);
           event.source.close();
@@ -106,16 +108,16 @@ export default function OctoShelf(appElement, options, appWorker) {
     }
     syncAll.addEventListener('click', function(event) {
       event.preventDefault();
-      parsedPostMessage('getAllRepoDetails');
+      postMessageToWorker('getAllRepoDetails');
     });
     repoSection.addEventListener('click', function(event) {
       let {action, url} = event.target && event.target.dataset;
       let actionMap = {
         refresh() {
-          parsedPostMessage('getRepoDetailsByUrl', url);
+          postMessageToWorker('getRepoDetailsByUrl', url);
         },
         remove() {
-          parsedPostMessage('removeRepo', url);
+          postMessageToWorker('removeRepo', url);
         }
       };
 
@@ -126,7 +128,7 @@ export default function OctoShelf(appElement, options, appWorker) {
     });
     window.addEventListener("visibilitychange", function() {
       isPageVisible = document.visibilityState !== 'hidden';
-      parsedPostMessage('pageVisibilityChanged', isPageVisible);
+      postMessageToWorker('pageVisibilityChanged', isPageVisible);
       removeNewPullRequestAnimations();
     });
   }
@@ -307,7 +309,7 @@ export default function OctoShelf(appElement, options, appWorker) {
    * @param {String} url - repo url
    */
   function addRepository(url) {
-    parsedPostMessage('addRepo', url);
+    postMessageToWorker('addRepo', url);
   }
 
   /**
@@ -365,57 +367,11 @@ export default function OctoShelf(appElement, options, appWorker) {
   }
 
   /**
-   * Unwrap PostMessages
-   * @param {Function} fn - function to call
-   * @param {Function} msgType - function name
-   * @param {String} params - Stringified object that contains a postData prop
-   */
-  function unwrapPostMessage(fn, msgType, params) {
-    let parsedParams = JSON.parse(params);
-    let postData = parsedParams.postData;
-    if (msgType !== 'log') {
-      log(`[OctoShelf] "${msgType}" called with:`, postData);
-    }
-    fn(postData);
-  }
-
-  /**
-   * Send a Parsed Post Message
-   * @param {String} messageType - function we will attempt to call
-   * @param {*} postData - Some data that we will wrap into a stringified object
-   */
-  function parsedPostMessage(messageType, postData) {
-    appWorker.postMessage([messageType, JSON.stringify({postData})]);
-  }
-
-  /**
-   * Contract: appWorker.postMessage([msgType, msgData]);
-   * @type {Worker}
-   */
-  appWorker.addEventListener('message', function({data: [msgType, msgData]}) {
-    let msgTypes = {
-      log,
-      notify,
-      hasRefreshed,
-      drawPlaceholderRepo,
-      animateNewPullRequests,
-      updateRepository,
-      removeRepository,
-      toggleLoadingRepository
-    };
-
-    if (msgTypes[msgType]) {
-      return unwrapPostMessage(msgTypes[msgType], msgType, msgData);
-    }
-    log(`"${msgType}" was not part of the allowed postMessage functions`);
-  });
-
-  /**
    * Initialize the app with a bunch of variables defining github endpoints
    * @param {Object} apiVariables Object that defines several github api values
    */
   function initAPIVariables(apiVariables) {
-    parsedPostMessage('initAPIVariables', apiVariables);
+    postMessageToWorker('initAPIVariables', apiVariables);
   }
 
   /**
@@ -427,6 +383,14 @@ export default function OctoShelf(appElement, options, appWorker) {
       addRepository(url);
     });
   }
+
+  registerWorkerEventHandles('OctoShelf', {
+    drawPlaceholderRepo,
+    animateNewPullRequests,
+    updateRepository,
+    removeRepository,
+    toggleLoadingRepository
+  });
 
   /**
    * Initialize the app!
@@ -445,7 +409,7 @@ export default function OctoShelf(appElement, options, appWorker) {
     loadSharedRepos();
 
     loadAnimations(appElement);
-    loadActionPanelListeners(appElement, parsedPostMessage);
+    loadActionPanelListeners(appElement);
     loadAppEventListeners();
   })();
 }
