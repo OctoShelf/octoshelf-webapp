@@ -28,8 +28,8 @@
 
 import {log} from './utiltities';
 
-const registeredFns = {};
-const nameMap = {};
+let registeredFns = {};
+let nameMap = {};
 let appWorker;
 
 /**
@@ -55,7 +55,8 @@ function executeWorkerEventHandle(fn, fnName, params) {
   let parsedParams = JSON.parse(params);
   let {postData} = parsedParams;
   if (fnName !== 'log') {
-    log(`[Worker] -> [${nameMap[fnName]}] "${fnName}" called with:`, postData);
+    let fnParent = nameMap && nameMap[fnName] || '';
+    log(`[Worker] -> [${fnParent}] "${fnName}" called with:`, postData);
   }
   fn(postData);
 }
@@ -67,7 +68,7 @@ function executeWorkerEventHandle(fn, fnName, params) {
 export function registerWorker(worker) {
   appWorker = worker;
   appWorker.addEventListener('message', function({data: [fnName, fnData]}) {
-    if (registeredFns[fnName]) {
+    if (registeredFns && registeredFns[fnName]) {
       return executeWorkerEventHandle(registeredFns[fnName], fnName, fnData);
     }
     log(`"${fnName}" was not part of the allowed postMessage functions`);
@@ -80,6 +81,14 @@ export function registerWorker(worker) {
  * @param {Object} newFns - object of functions
  */
 export function registerWorkerEventHandles(handlerName, newFns) {
+  // Generally the following two conditions won't get triggered,
+  // but in testing environments the objects seem to blow away at times...
+  if (!registeredFns) {
+    registeredFns = {};
+  }
+  if (!nameMap) {
+    nameMap = {};
+  }
   Object.assign(registeredFns, newFns);
   Object.keys(newFns).forEach(fnName => {
     nameMap[fnName] = handlerName;
