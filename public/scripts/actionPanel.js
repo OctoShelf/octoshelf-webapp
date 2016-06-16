@@ -34,7 +34,7 @@ function requestNotificationPermission() {
 /**
  * Load the App event listeners
  * @param {Element} appElement - The main OctoShelf element
- * @param {Function} parsedPostMessage - helper postMessage-to-worker function
+ * @return {Object} elements we binded listeners to. (helpful for testing)
  */
 export function loadActionPanelListeners(appElement) {
   refreshRateOptions.addEventListener('change', function(event) {
@@ -77,6 +77,15 @@ export function loadActionPanelListeners(appElement) {
   });
 
   postMessageToWorker('startRefreshing', startingRefreshRate);
+
+  return {
+    refreshRateOptions,
+    requestNotifications,
+    moreInfoToggle,
+    toggleViewType,
+    refreshRateToggle,
+    shareToggle
+  };
 }
 
 /**
