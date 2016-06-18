@@ -12,6 +12,7 @@
 import {workerPostMessage, registerWorkerEventHandles} from './conductor';
 const postMessageToWorker = workerPostMessage('ActionPanel');
 
+const appElement = document.getElementById('octoshelf');
 const requestNotifications = document.getElementById('requestNotifications');
 const refreshRateToggle = document.getElementById('refreshRateToggle');
 const refreshContent = document.getElementById('refreshContent');
@@ -33,10 +34,9 @@ function requestNotificationPermission() {
 
 /**
  * Load the App event listeners
- * @param {Element} appElement - The main OctoShelf element
  * @return {Object} elements we binded listeners to. (helpful for testing)
  */
-export function loadActionPanelListeners(appElement) {
+export function loadActionPanelListeners() {
   refreshRateOptions.addEventListener('change', function(event) {
     let {value} = event.target;
     let delay = Number(value);
@@ -79,12 +79,15 @@ export function loadActionPanelListeners(appElement) {
   postMessageToWorker('startRefreshing', startingRefreshRate);
 
   return {
+    appElement,
     refreshRateOptions,
     requestNotifications,
     moreInfoToggle,
     toggleViewType,
     refreshRateToggle,
-    shareToggle
+    shareToggle,
+    shareContent,
+    refreshContent
   };
 }
 
