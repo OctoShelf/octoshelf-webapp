@@ -66,6 +66,10 @@ function executeWorkerEventHandle(fn, fnName, params) {
  * @param {Worker} worker - our web worker
  */
 export function registerWorker(worker) {
+  if (!(worker && worker.addEventListener)) {
+    log('The worker you attempted to register was not a worker');
+    return;
+  }
   appWorker = worker;
   appWorker.addEventListener('message', function({data: [fnName, fnData]}) {
     if (registeredFns && registeredFns[fnName]) {
