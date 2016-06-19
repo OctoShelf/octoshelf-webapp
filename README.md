@@ -2,8 +2,8 @@
 
 A Multi-Repo Pull Request Manager
 
-![](https://travis-ci.org/OctoShelf/octoshelf.svg)
-[![Coverage Status](https://coveralls.io/repos/github/OctoShelf/octoshelf/badge.svg?branch=master)](https://coveralls.io/github/OctoShelf/octoshelf?branch=master)
+![](https://travis-ci.org/OctoShelf/octoshelf-webapp.svg)
+[![Coverage Status](https://coveralls.io/repos/github/OctoShelf/octoshelf-webapp/badge.svg?branch=master)](https://coveralls.io/github/OctoShelf/octoshelf-webapp?branch=master)
 
 Ever find yourself tabbing between multiple repos across several orgs,
 trying to manage the constant flow of new pull requests?
@@ -15,10 +15,10 @@ open pull requests, and notifies you as new pull requests come in.
 
 OctoShelf is powered by:
 
-* [LocalStorage](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage),
-* [WebWorkers](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API),
-* [Notifications](https://developer.mozilla.org/en-US/docs/Web/API/notification),
-* and [Github's Awesome Api](https://developer.github.com/v3/)
+
+|:white_check_mark: [LocalStorage](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage)|:white_check_mark: [Web Workers](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API)|:white_check_mark: [Notifications](https://developer.mozilla.org/en-US/docs/Web/API/notification)|:white_check_mark: [Github's Awesome Api](https://developer.github.com/v3/)|
+|---|---|---|---|
+
 
 ## Usage
 
