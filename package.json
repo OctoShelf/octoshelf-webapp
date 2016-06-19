@@ -1,5 +1,5 @@
 {
-  "name": "octoshelf",
+  "name": "octoshelf-webapp",
   "version": "0.0.1",
   "description": "Manage your pull requests with style!",
   "main": "index.js",
@@ -17,7 +17,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/OctoShelf/octoshelf.git"
+    "url": "git+https://github.com/OctoShelf/octoshelf-webapp.git"
   },
   "keywords": [
     "Github",
@@ -26,9 +26,9 @@
   "author": "Tyler Stark <TheIronDeveloper@gmail.com> (http://www.theirondeveloper.com/)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/OctoShelf/octoshelf/issues"
+    "url": "https://github.com/OctoShelf/octoshelf-webapp/issues"
   },
-  "homepage": "https://github.com/OctoShelf/octoshelf#readme",
+  "homepage": "https://github.com/OctoShelf/octoshelf-webapp#readme",
   "devDependencies": {
     "ava": "^0.15.1",
     "babel-preset-es2015": "^6.9.0",
