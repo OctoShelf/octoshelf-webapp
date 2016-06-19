@@ -373,6 +373,15 @@ function loadSharedRepos() {
 }
 
 /**
+ * Only after we have initialized the web worker and verified the github endpoint works,
+ * should we attempt to fetch repository data
+ */
+function apiInitialized() {
+  repoStateManager.fetch();
+  loadSharedRepos();
+}
+
+/**
  * OctoShelf, a Multi-Repo PR Manager
  *
  * @param {Object} options - OctoShelf options
@@ -393,15 +402,13 @@ export default function OctoShelf(options) {
    */
   initAPIVariables({accessToken, apiUrl, githubUrl});
 
-  repoStateManager.fetch();
-  loadSharedRepos();
-
   loadAnimations(appElement);
-  loadActionPanelListeners(appElement);
+  loadActionPanelListeners();
   loadAppEventListeners();
 }
 
 registerWorkerEventHandles('OctoShelf', {
+  apiInitialized,
   drawPlaceholderRepo,
   animateNewPullRequests,
   updateRepository,
