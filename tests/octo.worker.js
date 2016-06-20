@@ -22,9 +22,9 @@ test.beforeEach(t => {
 
         if (url.includes('/pulls')) {
           return Promise.resolve([{
-            id: 'id', title: 'title', html_url: 'url'
+            id: 'id1', title: 'title', html_url: 'url'
           }, {
-            id: 'id', title: 'title', html_url: 'url'
+            id: 'id2', title: 'title', html_url: 'url'
           }]);
         }
 
@@ -35,13 +35,11 @@ test.beforeEach(t => {
         });
       }
     };
+    fakeFetchResponse.ok = true;
     return Promise.resolve(fakeFetchResponse);
   };
-  worker = require(workerPath);
-});
-
-test.afterEach(t => {
   delete require.cache[require.resolve(workerPath)];
+  worker = require(workerPath);
 });
 
 
@@ -49,6 +47,30 @@ test('setting worker variables', t => {
   worker.initAPIVariables({ accessToken: 'a', apiUrl: 'b', githubUrl: 'c'});
   let state = worker.getAPIVariables();
   t.deepEqual(state, {accessToken: 'a', apiUrl: 'b', githubUrl: 'c'});
+});
+
+test('setting worker variables without accessToken', t => {
+  worker.initAPIVariables({ apiUrl: 'b', githubUrl: 'c'});
+  let state = worker.getAPIVariables();
+  t.deepEqual(state, {accessToken: undefined, apiUrl: 'b', githubUrl: 'c'});
+});
+
+test('should notify if github is not available', t => {
+  global.fetch = (url) => {
+    let response = {
+      url,
+      ok: false
+    };
+    return Promise.resolve(response);
+  };
+  worker.self.postMessage = function([messageType, msgDataString]) {
+    if (messageType === 'notify') {
+      let {postData} = JSON.parse(msgDataString);
+      t.is(postData, 'Something went wrong contacting Github');
+      t.pass();
+    }
+  };
+  worker.verifyGithub();
 });
 
 test('setting accessToken', t => {
@@ -84,16 +106,24 @@ test('should not allow an invalid postMessage through', t => {
   postMessageHandler({data: ['getWorkerState', '{"postData": ""}']});
 });
 
-test('web worker addRepo', t => {
+test('web worker addRepo (with github available)', t => {
+  return new Promise(function(resolve) {
+    worker.forceGithubAvailable(true);
+    let state = worker.getWorkerState();
+    t.is(state.repositories.length, 0);
+    t.is(state.repositories.find(repo => repo.url ==='test') !== undefined, false);
 
-  let state = worker.getWorkerState();
-  t.is(state.repositories.length, 0);
-  t.is(state.repositories.find(repo => repo.url ==='test') !== undefined, false);
-
-  worker.addRepo('test');
-  state = worker.getWorkerState();
-  t.is(state.repositories.length, 1);
-  t.is(state.repositories.find(repo => repo.url ==='test') !== undefined, true);
+    worker.self.postMessage = function([messageType, msgDataString]) {
+      if (messageType === 'drawPlaceholderRepo') {
+        let {postData} = JSON.parse(msgDataString);
+        t.is(postData.url, 'test');
+        t.is(state.repositories.length, 1);
+        t.is(state.repositories.find(repo => repo.url ==='test') !== undefined, true);
+        resolve();
+      }
+    };
+    worker.addRepo('test');
+  });
 });
 
 test('web worker add duplicate', t => {
@@ -138,4 +168,124 @@ test('getRepoDetailsByUrl', t => {
       t.is(repo.url, 'getRepoDetailsByUrl');
     });
   });
+});
+
+test('getAllRepoDetails', t => {
+  delete require.cache[require.resolve(workerPath)];
+  let worker = require(workerPath);
+  worker.forceGithubAvailable(true);
+  worker.addRepo('repo1')
+    .then(() => worker.addRepo('repo2'))
+    .then(() => worker.addRepo('repo3'))
+    .then(() => worker.getAllRepoDetails('getRepoDetailsByUrl'))
+    .then(({currentPRMap}) => {
+      t.is(currentPRMap.size, 2);
+      worker.pageVisibilityChanged(true);
+      let state = worker.getWorkerState();
+      t.is(state.currentPRMap, state.newPRMap);
+    });
+});
+
+test('pageVisibilityChanged', t => {
+  let state = worker.getWorkerState();
+  t.is(state.isPageVisible, true);
+
+  worker.pageVisibilityChanged(false);
+  state = worker.getWorkerState();
+  t.is(state.isPageVisible, false);
+
+  worker.pageVisibilityChanged(true);
+  state = worker.getWorkerState();
+  t.is(state.isPageVisible, true);
+});
+
+test('send Pull Requests Notification', t => {
+  worker.initAPIVariables({ accessToken: 'a', apiUrl: 'b', githubUrl: 'http://github.com/'});
+  let Notification = (notifyTitle, {body, icon}) => {
+    t.is(notifyTitle, '[OctoShelf] : 2 new pull requests');
+    t.is(body, '• urlA\n• urlB');
+    t.is(icon, '/images/octoshelf-icon-dark.jpg');
+    t.pass();
+    return {
+      close: () => {}
+    }
+  };
+  Notification.permission = 'granted';
+  global.Notification = Notification;
+
+  let pullRequests = [{url: 'http://github.com/urlA'}, {url: 'http://github.com/urlB'}];
+  worker.sendNewPullRequestNotification(pullRequests, false);
+});
+
+test('send Pull Request Notification', t => {
+  worker.initAPIVariables({ accessToken: 'a', apiUrl: 'b', githubUrl: 'http://github.com/'});
+  let Notification = (notifyTitle, {body, icon}) => {
+    t.is(notifyTitle, '[OctoShelf] : 1 new pull request');
+    t.is(body, '• urlA');
+    t.is(icon, '/images/octoshelf-icon-dark.jpg');
+    t.pass();
+    return {
+      close: () => {}
+    }
+  };
+  Notification.permission = 'granted';
+  global.Notification = Notification;
+
+  let pullRequests = [{url: 'http://github.com/urlA'}];
+  worker.sendNewPullRequestNotification(pullRequests, false);
+});
+
+test('should not create notification with denied permission', t => {
+  worker.initAPIVariables({ accessToken: 'a', apiUrl: 'b', githubUrl: 'http://github.com/'});
+  let Notification = () => {
+    t.fail();
+  };
+  Notification.permission = 'denied';
+  global.Notification = Notification;
+
+  let pullRequests = [{url: 'http://github.com/urlA'}];
+  worker.sendNewPullRequestNotification(pullRequests, false);
+});
+
+test('should not create notification with other permission states', t => {
+  worker.initAPIVariables({ accessToken: 'a', apiUrl: 'b', githubUrl: 'http://github.com/'});
+  let Notification = () => {
+    t.fail();
+  };
+  Notification.permission = 'charmander';
+  global.Notification = Notification;
+
+  let pullRequests = [{url: 'http://github.com/urlA'}];
+  worker.sendNewPullRequestNotification(pullRequests, false);
+});
+
+test('send Pull Requests Notification without blanks', t => {
+  worker.initAPIVariables({ accessToken: 'a', apiUrl: 'b', githubUrl: 'http://github.com/'});
+  let Notification = (notifyTitle, {body, icon}) => {
+    t.is(notifyTitle, '[OctoShelf] : 2 new pull requests');
+    t.is(body, '• urlA\n• urlB');
+    t.is(icon, '/images/octoshelf-icon-dark.jpg');
+    t.pass();
+    return {
+      close: () => {}
+    }
+  };
+  Notification.permission = 'granted';
+  global.Notification = Notification;
+
+  let pullRequests = [{url: 'http://github.com/urlA'}, {url: 'http://github.com/urlB'}, {}];
+  worker.sendNewPullRequestNotification(pullRequests, false);
+});
+
+test('animateNewPullRequests', t => {
+  worker.self.postMessage = function([messageType, msgDataString]) {
+    if (messageType === 'animateNewPullRequests') {
+      let {postData} = JSON.parse(msgDataString);
+      t.is(postData[0], 'cow');
+      t.is(postData[1], 'bell');
+      t.pass();
+    }
+  };
+  let pullRequests = [{id: 'cow', url: 'http://github.com/urlA'}, {id: 'bell', url: 'http://github.com/urlB'}];
+  worker.animateNewPullRequests(pullRequests);
 });

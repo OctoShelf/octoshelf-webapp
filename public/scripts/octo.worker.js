@@ -20,6 +20,7 @@ let accessToken = '';
 let newPRMap;
 let currentPRMap = new Map();
 let isPageVisible = true;
+let isGithubApiAvailable = false;
 
 const repository = {
   url: '',
@@ -80,7 +81,7 @@ function addRepo(url) {
 
   if (repositories.find(repo => repo.url === url)) {
     parsedPostMessage('notify', `"${url}" was already added`);
-    return;
+    return Promise.resolve(null);
   }
 
   let newRepository = Object.assign({}, repository, {
@@ -104,6 +105,24 @@ function removeRepo(url) {
 }
 
 /**
+ * Verify we can contact github's api, and send notifications and flip a bool if we can/can't
+ * @return {Promise} fetch - response of if github is available or not
+ */
+function verifyGithub() {
+  let url = apiUrl + (accessToken ? `?access_token=${accessToken}` : '');
+  return fetch(url).then(response => {
+    if (!response.ok) {
+      throw new Error('Something went wrong contacting Github');
+    }
+    isGithubApiAvailable = true;
+    return {isGithubApiAvailable};
+  }).catch(err => {
+    isGithubApiAvailable = false;
+    return {err, isGithubApiAvailable};
+  });
+}
+
+/**
  * Fetch from the Github API.
  * The access_token is important because it increases the rate limit.
  * @param {String} url - url we are fetching from
@@ -111,11 +130,16 @@ function removeRepo(url) {
  * @return {Promise} GithubApiResponse - response given back by github
  */
 function fetchGithubApi(url, accessToken) {
-  if (!accessToken) {
-    return fetch(`${url}`);
+  // Don't even try to reach github if its not available (network issues, etc)
+  if (!isGithubApiAvailable) {
+    return Promise.resolve(null);
   }
 
-  return fetch(`${url}?access_token=${accessToken}`);
+  if (accessToken) {
+    url += `?access_token=${accessToken}`;
+  }
+
+  return fetch(`${url}`).then(response => response.json());
 }
 
 /**
@@ -142,10 +166,7 @@ function fetchRepoPulls(repoUrl) {
  * @return {Promise.<T>} [repoDetails, repoPullRequests]
  */
 function fetchRepo(repoUrl) {
-  return Promise.all([fetchRepoDetails(repoUrl), fetchRepoPulls(repoUrl)])
-    .then(([repoDetails, prs]) => {
-      return Promise.all([repoDetails.json(), prs.json()]);
-    });
+  return Promise.all([fetchRepoDetails(repoUrl), fetchRepoPulls(repoUrl)]);
 }
 
 /**
@@ -163,12 +184,11 @@ function getRepoDetails(repository) {
   if (fetchedDetails) {
     parsedPostMessage('toggleLoadingRepository', [id, url, true]);
     return fetchRepoPulls(repoUrl)
-      .then(prs => prs.json())
       .then(prs => {
         repository.prs = prs.map(simplifyPR);
       })
       .catch(() => {
-        parsedPostMessage('notify', 'Error fetching pull requests');
+        parsedPostMessage('notify', `Error fetching pull requests for: ${url}`);
       })
       .then(() => {
         parsedPostMessage('updateRepository', repository);
@@ -178,21 +198,19 @@ function getRepoDetails(repository) {
   }
 
   return fetchRepo(repoUrl)
-    .then(([{id, name, full_name}, prs]) => {
-      /* eslint camelcase:0 */
+    .then(([{id, name, full_name: fullName}, prs]) => {
       let simplePrs = prs.map(simplifyPR);
       simplePrs.forEach(pr => {
         currentPRMap.set(pr.id, pr);
       });
       repository.id = id;
       repository.name = name;
-      repository.fullName = full_name;
+      repository.fullName = fullName;
       repository.prs = simplePrs;
       repository.fetchedDetails = true;
       return Promise.resolve(repository);
     })
     .catch(() => {
-      removeRepo(url);
       parsedPostMessage('notify', 'Invalid Url');
       repoStillOnDom = false;
     })
@@ -228,11 +246,12 @@ function getNewPullRequests(fetchedResults, previousResults) {
  */
 function sendNewPullRequestNotification(pullRequests, isPageVisible) {
   if (!isPageVisible) {
+    pullRequests = pullRequests.filter(pr => pr.url);
     let size = pullRequests.length;
     let requestWord = size > 1 ? 'requests' : 'request';
     let title = `[OctoShelf] : ${size} new pull ${requestWord}`;
     let body = pullRequests.map(pr => {
-      return '• ' + (pr.url || '').replace(githubUrl, '');
+      return '• ' + pr.url.replace(githubUrl, '');
     }).join('\n');
     sendNotification(title, body);
   }
@@ -251,25 +270,31 @@ function animateNewPullRequests(pullRequests) {
 /**
  * Foreach through all the repos, getting details for each of them
  * (which in turn updates the DOM with each of them)
+ * @return {Promise} repos resolved and current pullRequest map
  */
 function getAllRepoDetails() {
-  let allRepos = repositories.map(repository => getRepoDetails(repository));
-  Promise.all(allRepos)
-    .then(repos => {
-      newPRMap = new Map();
-      repos.forEach(repo => repo.prs.forEach(pr => newPRMap.set(pr.id, pr)));
+  // Check if github's api is available first before all the other api calls
+  return verifyGithub()
+    .then(() => {
+      let allRepos = repositories.map(repository => getRepoDetails(repository));
+      return Promise.all(allRepos)
+        .then(repos => {
+          newPRMap = new Map();
+          repos.forEach(repo => repo.prs.forEach(pr => newPRMap.set(pr.id, pr)));
 
-      let newPrs = getNewPullRequests(newPRMap, currentPRMap);
-      let updateFns = [
-        sendNewPullRequestNotification,
-        animateNewPullRequests
-      ];
+          let newPrs = getNewPullRequests(newPRMap, currentPRMap);
+          let updateFns = [
+            sendNewPullRequestNotification,
+            animateNewPullRequests
+          ];
 
-      if (newPrs.length) {
-        updateFns.forEach(fn => fn(newPrs, isPageVisible));
-      }
+          if (newPrs.length) {
+            updateFns.forEach(fn => fn(newPrs, isPageVisible));
+          }
 
-      currentPRMap = newPRMap;
+          currentPRMap = newPRMap;
+          return {currentPRMap, repos};
+        });
     });
 }
 
@@ -358,6 +383,14 @@ function initAPIVariables(apiVariables) {
   accessToken = apiVariables.accessToken;
   apiUrl = apiVariables.apiUrl;
   githubUrl = apiVariables.githubUrl;
+
+  verifyGithub()
+    .then(({err, githubAvailable}) => {
+      if (err) {
+        parsedPostMessage('notify', err.toString());
+      }
+      parsedPostMessage('apiInitialized', githubAvailable);
+    });
 }
 
 /**
@@ -366,7 +399,7 @@ function initAPIVariables(apiVariables) {
  * @return {Object} state
  */
 function getWorkerState() {
-  return {repositories, accessToken};
+  return {repositories, accessToken, isPageVisible, currentPRMap, newPRMap};
 }
 
 /**
@@ -375,6 +408,14 @@ function getWorkerState() {
  */
 function getAPIVariables() {
   return {accessToken, apiUrl, githubUrl};
+}
+
+/**
+ * Helper Test Function that forces a change on the isGithubApiAvailable variable
+ * @param {Boolean} forcedUpdate - new isGithubApiAvailable value
+ */
+function forceGithubAvailable(forcedUpdate) {
+  isGithubApiAvailable = forcedUpdate;
 }
 
 /**
@@ -405,7 +446,7 @@ function postMessageHandler({data: [fnName, msgData]}) {
 
 self.addEventListener('message', postMessageHandler);
 
-// Exposing functions for avajs tests, only if module.exports is available
+// Exposing functions for avajs tests
 module.exports = {
 
   self,
@@ -414,6 +455,11 @@ module.exports = {
   initAPIVariables,
   postMessageHandler,
 
+  verifyGithub,
+  animateNewPullRequests,
+  sendNewPullRequestNotification,
+  pageVisibilityChanged,
+  forceGithubAvailable,
   setAccessToken,
   simplifyPR,
   addRepo,
