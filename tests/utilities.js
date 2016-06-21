@@ -3,7 +3,7 @@ import 'babel-register';
 import test from 'ava';
 import './helpers/setup-browser-env.js';
 
-import {log, notify} from '../public/scripts/utiltities';
+import {log, notify} from '../public/scripts/utilities';
 
 const consoleLog = console.log;
 const consoleGroup = console.group;

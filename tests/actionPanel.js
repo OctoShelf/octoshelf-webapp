@@ -10,6 +10,8 @@ let updateShareLink;
 let loadActionPanelListeners;
 
 function resetDOMAndActionPanel() {
+  let {shh} = require('../public/scripts/utilities');
+  shh();
   global.document = require('jsdom').jsdom(`
     <div id="octoshelf"><div id="repoSection"></div></div>
     <span class="infoPanel-actions">

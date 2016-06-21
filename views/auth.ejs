@@ -5,10 +5,10 @@
     <script>
         window.addEventListener('message',function(event) {
             let origin = event.origin;
-            if (event.origin !== '<%= origin %>') {
+            if (origin !== window.location.origin) {
                 return;
             }
-            event.source.postMessage('<%= accessToken %>', event.origin);
+            event.source.postMessage('<%= accessToken %>', origin);
         },false);
     </script>
 </head>
