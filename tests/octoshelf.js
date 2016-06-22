@@ -5,6 +5,6 @@ import './helpers/setup-browser-env.js';
 
 import Octoshelf from '../public/scripts/octoshelf';
 
-test('test', t => {
+test.skip('Octoshelf tests need to be written', t => {
   t.pass();
 });

@@ -8,6 +8,8 @@ let conductor;
 let registerWorker, registerWorkerEventHandles, workerPostMessage;
 
 test.beforeEach(t => {
+  let {shh} = require('../public/scripts/utilities');
+  shh();
   delete require.cache[require.resolve('../public/scripts/conductor')];
   conductor = require('../public/scripts/conductor');
   registerWorker = conductor.registerWorker;

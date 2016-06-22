@@ -1,27 +1,21 @@
 'use strict';
 
-import {notify} from './utiltities';
+import {notify} from './utilities';
 import {loadActionPanelListeners, updateShareLink} from './actionPanel';
 import {loadAnimations, updateRotations} from './animations';
+import {loadAddRepoListeners, initAPIVariables, setInitialFetch} from './addRepo';
 
 import {workerPostMessage, registerWorkerEventHandles} from './conductor';
 const postMessageToWorker = workerPostMessage('OctoShelf');
 
 const appElement = document.getElementById('octoshelf');
 const repoSection = document.getElementById('repoSection');
-const authStatus = document.getElementById('authStatus');
-const syncAll = document.getElementById('syncAll');
-const addRepoForm = document.getElementById('addRepoForm');
-const addRepoInput = document.getElementById('addRepoInput');
 
 const prResizeThreshold = 8;
 let isPageVisible = true;
 let newPRQueue = [];
 
-let accessToken = '';
-let apiUrl = 'https://api.github.com';
 let githubUrl = 'https://github.com/';
-let origin = 'http://www.octoshelf.com';
 let sharedReposString = '';
 let sharedRepos = [];
 
@@ -47,7 +41,7 @@ const repoStateManager = {
     this.uniqueRepos.delete(url);
     localStorage.setItem('repositories', JSON.stringify(this.repositories));
   },
-  fetch() {
+  fetch(addRepository) {
     let repoString = localStorage.getItem('repositories') || '[]';
     this.repositories = JSON.parse(repoString);
     this.repositories.forEach(url => {
@@ -61,43 +55,6 @@ const repoStateManager = {
  * Load Event Listeners specific to OctoShelf
  */
 function loadAppEventListeners() {
-  addRepoForm.addEventListener('submit', function(event) {
-    event.preventDefault();
-    addRepository(addRepoInput.value);
-    addRepoInput.value = '';
-  });
-  addRepoInput.addEventListener('input', function() {
-    if (addRepoInput.value.includes(githubUrl)) {
-      addRepoInput.value = addRepoInput.value.replace(githubUrl, '');
-      addRepoInput.value = addRepoInput.value.replace(/\/+$/, '');
-    }
-  });
-  if (authStatus) {
-    authStatus.addEventListener('click', function(event) {
-      event.preventDefault();
-      let {href} = event.target;
-      let authWindow = window.open(href, '', '');
-      let timeout = setInterval(function() {
-        authWindow.postMessage('fetchToken', origin);
-      }, 500);
-
-      window.addEventListener('message', function(event) {
-        if (event.origin !== origin) {
-          return;
-        }
-
-        let token = event.data;
-        postMessageToWorker('setAccessToken', token);
-        authStatus.parentNode.removeChild(authStatus);
-        clearTimeout(timeout);
-        event.source.close();
-      });
-    });
-  }
-  syncAll.addEventListener('click', function(event) {
-    event.preventDefault();
-    postMessageToWorker('getAllRepoDetails');
-  });
   repoSection.addEventListener('click', function(event) {
     let {action, url} = event.target && event.target.dataset;
     let actionMap = {
@@ -293,14 +250,6 @@ function updateRepository(repository) {
 }
 
 /**
- * Add a repository to the DOM
- * @param {String} url - repo url
- */
-function addRepository(url) {
-  postMessageToWorker('addRepo', url);
-}
-
-/**
  * Remove a repository from the DOM
  * @param {String} url - repositories have a data-url="" to target from
  */
@@ -355,33 +304,6 @@ function removeNewPullRequestAnimations() {
 }
 
 /**
- * Initialize the app with a bunch of variables defining github endpoints
- * @param {Object} apiVariables -  Object that defines several github api values
- */
-function initAPIVariables(apiVariables) {
-  postMessageToWorker('initAPIVariables', apiVariables);
-}
-
-/**
- * If the url has the share queryParam, pass in each of the repos.
- * Example url: /?share=org/repo1,org/repo2,org/repo3
- */
-function loadSharedRepos() {
-  sharedRepos.filter(repo => repo).forEach(url => {
-    addRepository(url);
-  });
-}
-
-/**
- * Only after we have initialized the web worker and verified the github endpoint works,
- * should we attempt to fetch repository data
- */
-function apiInitialized() {
-  repoStateManager.fetch();
-  loadSharedRepos();
-}
-
-/**
  * OctoShelf, a Multi-Repo PR Manager
  *
  * @param {Object} options - OctoShelf options
@@ -390,25 +312,24 @@ function apiInitialized() {
  * it will simply use public github api urls as its defaults.
  */
 export default function OctoShelf(options) {
-  accessToken = options.accessToken || accessToken;
-  apiUrl = options.apiUrl || apiUrl;
   githubUrl = options.githubUrl || githubUrl;
-  origin = options.origin || origin;
   sharedReposString = options.sharedRepos || sharedReposString;
   sharedRepos = sharedReposString.split(',');
 
   /**
    * Initialize the app!
    */
-  initAPIVariables({accessToken, apiUrl, githubUrl});
+  setInitialFetch(repoStateManager, sharedRepos);
+  initAPIVariables(options);
 
+  // Load event listeners
   loadAnimations(appElement);
   loadActionPanelListeners();
   loadAppEventListeners();
+  loadAddRepoListeners();
 }
 
 registerWorkerEventHandles('OctoShelf', {
-  apiInitialized,
   drawPlaceholderRepo,
   animateNewPullRequests,
   updateRepository,

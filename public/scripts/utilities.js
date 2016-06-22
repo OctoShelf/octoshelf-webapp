@@ -1,6 +1,8 @@
 
 import {registerWorkerEventHandles} from './conductor';
 
+let logsEnabled = true;
+
 /**
  * Log a message to console (if console exists)
  * @param {String} message - message to log (or group)
@@ -15,7 +17,7 @@ export function log() {
     message = message[0];
   }
 
-  if (console && console.log) {
+  if (console && console.log && logsEnabled) {
     if (console.group && otherMessages.length) {
       console.group(message);
       otherMessages.forEach(msg => console.log(msg));
@@ -46,6 +48,14 @@ export function notify(notifyText, duration = 1000) {
       notifications.removeChild(notification);
     }, 500);
   }, duration);
+}
+
+/**
+ * Logs are super noisy during tests.
+ * This helper function blocks console output
+ */
+export function shh() {
+  logsEnabled = false;
 }
 
 registerWorkerEventHandles('Utility', {log, notify});

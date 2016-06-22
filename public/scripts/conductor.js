@@ -26,7 +26,7 @@
  *
  */
 
-import {log} from './utiltities';
+import {log} from './utilities';
 
 let registeredFns = {};
 let nameMap = {};
