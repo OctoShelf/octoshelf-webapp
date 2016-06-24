@@ -1,7 +1,5 @@
 
-import 'babel-register';
 import test from 'ava';
-import './helpers/setup-browser-env.js';
 
 const workerPath = '../public/scripts/octo.worker';
 let worker;
@@ -199,82 +197,59 @@ test('pageVisibilityChanged', t => {
   t.is(state.isPageVisible, true);
 });
 
-test('send Pull Requests Notification', t => {
-  worker.initAPIVariables({ accessToken: 'a', apiUrl: 'b', githubUrl: 'http://github.com/'});
-  let Notification = (notifyTitle, {body, icon}) => {
-    t.is(notifyTitle, '[OctoShelf] : 2 new pull requests');
-    t.is(body, '• urlA\n• urlB');
-    t.is(icon, '/images/octoshelf-icon-dark.jpg');
-    t.pass();
-    return {
-      close: () => {}
-    }
-  };
-  Notification.permission = 'granted';
-  global.Notification = Notification;
-
-  let pullRequests = [{url: 'http://github.com/urlA'}, {url: 'http://github.com/urlB'}];
-  worker.sendNewPullRequestNotification(pullRequests, false);
-});
-
 test('send Pull Request Notification', t => {
-  worker.initAPIVariables({ accessToken: 'a', apiUrl: 'b', githubUrl: 'http://github.com/'});
-  let Notification = (notifyTitle, {body, icon}) => {
-    t.is(notifyTitle, '[OctoShelf] : 1 new pull request');
-    t.is(body, '• urlA');
-    t.is(icon, '/images/octoshelf-icon-dark.jpg');
-    t.pass();
-    return {
-      close: () => {}
+  worker.self.postMessage = function([messageType, msgDataString]) {
+    if (messageType === 'sendLinkNotification') {
+      let {postData} = JSON.parse(msgDataString);
+      let {title, body, url} = postData;
+      t.is(title, '[OctoShelf] New PR: pr title');
+      t.is(body, 'pr body');
+      t.is(url, 'http://github.com/urlA');
+      t.pass();
     }
   };
-  Notification.permission = 'granted';
-  global.Notification = Notification;
 
-  let pullRequests = [{url: 'http://github.com/urlA'}];
+  let pullRequests = [{title: 'pr title', body: 'pr body', url: 'http://github.com/urlA'}];
   worker.sendNewPullRequestNotification(pullRequests, false);
 });
 
-test('should not create notification with denied permission', t => {
-  worker.initAPIVariables({ accessToken: 'a', apiUrl: 'b', githubUrl: 'http://github.com/'});
-  let Notification = () => {
-    t.fail();
-  };
-  Notification.permission = 'denied';
-  global.Notification = Notification;
+test('send Pull Requests Notification', t => {
 
-  let pullRequests = [{url: 'http://github.com/urlA'}];
-  worker.sendNewPullRequestNotification(pullRequests, false);
-});
+  // in reverse order, like a stack
+  let expectedOutput = [
+    {title: '[OctoShelf] New PR: title2', body: 'body2', url: 'http://github.com/url2'},
+    {title: '[OctoShelf] New PR: title1', body: 'body1', url: 'http://github.com/url1'}
+  ];
 
-test('should not create notification with other permission states', t => {
-  worker.initAPIVariables({ accessToken: 'a', apiUrl: 'b', githubUrl: 'http://github.com/'});
-  let Notification = () => {
-    t.fail();
-  };
-  Notification.permission = 'charmander';
-  global.Notification = Notification;
-
-  let pullRequests = [{url: 'http://github.com/urlA'}];
-  worker.sendNewPullRequestNotification(pullRequests, false);
-});
-
-test('send Pull Requests Notification without blanks', t => {
-  worker.initAPIVariables({ accessToken: 'a', apiUrl: 'b', githubUrl: 'http://github.com/'});
-  let Notification = (notifyTitle, {body, icon}) => {
-    t.is(notifyTitle, '[OctoShelf] : 2 new pull requests');
-    t.is(body, '• urlA\n• urlB');
-    t.is(icon, '/images/octoshelf-icon-dark.jpg');
-    t.pass();
-    return {
-      close: () => {}
+  worker.self.postMessage = function([messageType, msgDataString]) {
+    if (messageType === 'sendLinkNotification') {
+      let {postData} = JSON.parse(msgDataString);
+      let {title, body, url} = postData;
+      let expected = expectedOutput.pop();
+      t.is(title, expected.title);
+      t.is(body, expected.body);
+      t.is(url, expected.url);
+      t.pass();
     }
   };
-  Notification.permission = 'granted';
-  global.Notification = Notification;
 
-  let pullRequests = [{url: 'http://github.com/urlA'}, {url: 'http://github.com/urlB'}, {}];
+  let pullRequests = [
+    {title: 'title1', body: 'body1', url: 'http://github.com/url1'},
+    {title: 'title2', body: 'body2', url: 'http://github.com/url2'}
+  ];
   worker.sendNewPullRequestNotification(pullRequests, false);
+});
+
+test('do not send Pull Requests Notification if page is visible', t => {
+
+  worker.self.postMessage = function([messageType]) {
+    if (messageType === 'sendLinkNotification') {
+      t.fail();
+    }
+  };
+
+  let pullRequests = [{title: 'title1', body: 'body1', url: 'http://github.com/url1'}];
+  worker.sendNewPullRequestNotification(pullRequests, true);
 });
 
 test('animateNewPullRequests', t => {

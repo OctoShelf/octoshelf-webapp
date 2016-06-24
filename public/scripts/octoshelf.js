@@ -4,6 +4,7 @@ import {notify} from './utilities';
 import {loadActionPanelListeners, updateShareLink} from './actionPanel';
 import {loadAnimations, updateRotations} from './animations';
 import {loadAddRepoListeners, initAPIVariables, setInitialFetch} from './addRepo';
+import './navi';
 
 import {workerPostMessage, registerWorkerEventHandles} from './conductor';
 const postMessageToWorker = workerPostMessage('OctoShelf');

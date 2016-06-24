@@ -57,6 +57,12 @@
     "whatwg-fetch": "^1.0.0",
     "worker-loader": "^0.7.0"
   },
+  "ava" : {
+    "require": [
+      "babel-register",
+      "./tests/helpers/setup-browser-env.js"
+    ]
+  },
   "nyc": {
     "exclude": [
       "tests",

@@ -41,8 +41,10 @@ export function loadActionPanelListeners() {
     let {value} = event.target;
     let delay = Number(value);
     if (delay) {
+      refreshRateToggle.classList.add('active');
       return postMessageToWorker('startRefreshing', delay);
     }
+    refreshRateToggle.classList.remove('active');
     return postMessageToWorker('stopRefreshing', '');
   });
   requestNotifications.addEventListener('click', function(event) {
@@ -66,6 +68,7 @@ export function loadActionPanelListeners() {
   });
   refreshRateToggle.addEventListener('click', function(event) {
     event.preventDefault();
+    shareToggle.classList.remove('active');
     shareContent.classList.remove('toggle');
     refreshContent.classList.toggle('toggle');
   });
@@ -74,9 +77,15 @@ export function loadActionPanelListeners() {
     updateShareLink();
     refreshContent.classList.remove('toggle');
     shareContent.classList.toggle('toggle');
+    shareToggle.classList.toggle('active');
   });
 
   postMessageToWorker('startRefreshing', startingRefreshRate);
+  refreshRateToggle.classList.add('active');
+
+  if (Notification && Notification.permission === 'granted') {
+    requestNotifications.classList.add('active');
+  }
 
   return {
     appElement,

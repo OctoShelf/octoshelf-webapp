@@ -1,7 +1,5 @@
 
-import 'babel-register';
 import test from 'ava';
-import './helpers/setup-browser-env.js';
 
 import {registerWorker} from '../public/scripts/conductor';
 
