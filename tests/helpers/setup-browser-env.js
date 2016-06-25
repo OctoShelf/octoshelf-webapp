@@ -4,6 +4,9 @@ global.navigator = window.navigator;
 global.Promise = window.Promise;
 global.Event = window.Event;
 global.fetch = () => {};
+
+// Dummy Browser Apis
+global.Notification = () => {close()  };
 global.localStorage = {
   getItem(){},
   setItem(){}

@@ -66,8 +66,8 @@ function setAccessToken(newAccessToken) {
  * @param {Object} PullRequest - Pull Request Object from the github api
  * @return {Object} simplePullRequest - smaller, cleaner pull request object
  */
-function simplifyPR({id, title, html_url: url}) {
-  return {id, title, url};
+function simplifyPR({id, body, title, html_url: url}) {
+  return {id, body, title, url};
 }
 
 /**
@@ -246,14 +246,12 @@ function getNewPullRequests(fetchedResults, previousResults) {
  */
 function sendNewPullRequestNotification(pullRequests, isPageVisible) {
   if (!isPageVisible) {
-    pullRequests = pullRequests.filter(pr => pr.url);
-    let size = pullRequests.length;
-    let requestWord = size > 1 ? 'requests' : 'request';
-    let title = `[OctoShelf] : ${size} new pull ${requestWord}`;
-    let body = pullRequests.map(pr => {
-      return '• ' + pr.url.replace(githubUrl, '');
-    }).join('\n');
-    sendNotification(title, body);
+    pullRequests.filter(pr => pr.url).forEach(pr => {
+      let title = `[OctoShelf] New PR: ${pr.title}`;
+      let body = pr.body;
+      let url = pr.url;
+      parsedPostMessage('sendLinkNotification', {title, body, url});
+    });
   }
 }
 
@@ -337,31 +335,6 @@ function log() {
  */
 function parsedPostMessage(messageType, postData) {
   self.postMessage([messageType, JSON.stringify({postData})]);
-}
-
-/**
- * If Notifications are permitted, send out a notification.
- * @param {String} notifyTitle - notification title
- * @param {String} body - notification body
- */
-function sendNotification(notifyTitle, body) {
-  let {permission} = Notification;
-  let permissionMap = {
-    granted() {
-      let notification = new Notification(notifyTitle, {
-        body,
-        icon: '/images/octoshelf-icon-dark.jpg'
-      });
-      setTimeout(notification.close.bind(notification), 5000);
-    },
-    denied() {
-      // no-op
-    }
-  };
-
-  if (permissionMap[permission]) {
-    permissionMap[permission]();
-  }
 }
 
 /**

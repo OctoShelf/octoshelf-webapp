@@ -215,6 +215,10 @@ a{ color: #fff}
 .infoPanel-actions {border-left: 1px solid #fff;padding-left: 0.5rem;margin-left: 0.5rem;position: relative}
 .infoPanel-action {font-size: 1.2em;margin-left: 1rem;}
 
+.infoPanel-action.active {
+    color: #46FF46;
+}
+
 
 .share-content {
     background: #fff;
@@ -320,6 +324,7 @@ a{ color: #fff}
 .octoInline .bubble .repositoryInner {transform: none !important;height: initial;}
 .octoInline .repo-title {margin-right: 1rem;width: inherit;}
 .octoInline .repository:after {display: none;}
+.octoInline + .infoPanel .toggleViewType {color: #46FF46;}
 
 @media (max-width: 700px) {
     .infoPanel {padding:  1rem 0.5rem}
