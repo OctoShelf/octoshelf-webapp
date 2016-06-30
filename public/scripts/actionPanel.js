@@ -36,7 +36,7 @@ function requestNotificationPermission() {
  * Load the App event listeners
  * @return {Object} elements we binded listeners to. (helpful for testing)
  */
-export function loadActionPanelListeners() {
+export function loadActionPanel() {
   refreshRateOptions.addEventListener('change', function(event) {
     let {value} = event.target;
     let delay = Number(value);
@@ -119,11 +119,11 @@ export function updateShareLink(origin = window.location.origin) {
   let repoSection = document.getElementById('repoSection');
   let shareUrl = document.getElementById('shareUrl');
 
-  let child = repoSection.firstChild;
+  let child = repoSection.firstElementChild;
   let urls = [];
   while (child) {
     urls.push(child.getAttribute('data-url'));
-    child = child.nextSibling;
+    child = child.nextElementSibling;
   }
   let url = origin;
   if (urls.length) {

@@ -8,6 +8,11 @@ global.fetch = () => {};
 // Dummy Browser Apis
 global.Notification = () => {close()  };
 global.localStorage = {
-  getItem(){},
-  setItem(){}
+  items: {},
+  getItem(name){
+    return this.items[name];
+  },
+  setItem(name, value){
+    this.items[name] = value;
+  }
 };
