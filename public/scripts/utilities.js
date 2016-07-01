@@ -1,6 +1,4 @@
 
-import {registerWorkerEventHandles} from './conductor';
-
 let logsEnabled = true;
 
 /**
@@ -57,5 +55,3 @@ export function notify(notifyText, duration = 1000) {
 export function shh() {
   logsEnabled = false;
 }
-
-registerWorkerEventHandles('Utility', {log, notify});

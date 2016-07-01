@@ -2,6 +2,7 @@
  * Add Repo Section - responsible for posting repositories to the web worker
  */
 
+import {getLocalRepos} from './localRepoState';
 import {workerPostMessage, registerWorkerEventHandles} from './conductor';
 const postMessageToWorker = workerPostMessage('AddRepo');
 
@@ -10,19 +11,19 @@ const addRepoInput = document.getElementById('addRepoInput');
 const authStatus = document.getElementById('authStatus');
 const syncAll = document.getElementById('syncAll');
 
-let accessToken = '';
-let apiUrl = 'https://api.github.com';
 let githubUrl = 'https://github.com/';
 let origin = window.location.origin;
 
-let initialFetchMethods = [];
+let sharedRepos = [];
 
 /**
  * Only after we have initialized the web worker and verified the github endpoint works,
  * should we attempt to fetch repository data
  */
 function apiInitialized() {
-  initialFetchMethods.forEach(fetchMethod => fetchMethod());
+  let repos = getLocalRepos();
+  repos.forEach(addRepository);
+  loadSharedRepos(sharedRepos);
 }
 
 /**
@@ -44,9 +45,13 @@ function addRepository(url) {
 
 /**
  * Add listeners associated with the addRepo section
+ * @param {Object} apiVariables - api variables
  * @return {Object} listener elements - elements that we binded listeners to
  */
-export function loadAddRepoListeners() {
+export function loadAddRepoSection(apiVariables = {}) {
+  githubUrl = apiVariables.githubUrl || githubUrl;
+  sharedRepos = apiVariables.sharedRepos || sharedRepos;
+
   addRepoForm.addEventListener('submit', function(event) {
     event.preventDefault();
     addRepository(addRepoInput.value);
@@ -94,29 +99,6 @@ export function loadAddRepoListeners() {
     authStatus,
     syncAll
   };
-}
-
-/**
- * When "apiInitialized" is posted, we will call a few initial load repo fns
- * @param {Object} repoStateManager - localStorage repo state manager
- * @param {Array} sharedRepos - repos that came from the share query param
- */
-export function setInitialFetch(repoStateManager, sharedRepos) {
-  initialFetchMethods = [
-    repoStateManager.fetch.bind(repoStateManager, addRepository),
-    loadSharedRepos.bind(loadSharedRepos, sharedRepos)
-  ];
-}
-
-/**
- * Initialize the app with a bunch of variables defining github endpoints
- * @param {Object} apiVariables -  Object that defines several github api values
- */
-export function initAPIVariables(apiVariables) {
-  accessToken = apiVariables.accessToken || accessToken;
-  apiUrl = apiVariables.apiUrl || apiUrl;
-  githubUrl = apiVariables.githubUrl || githubUrl;
-  postMessageToWorker('initAPIVariables', {accessToken, apiUrl, githubUrl});
 }
 
 registerWorkerEventHandles('AddRepo', {

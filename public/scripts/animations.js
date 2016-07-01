@@ -5,6 +5,7 @@
  * These functions only provide visual feedback, so excluded from unit tests.
  */
 
+const appElement = document.getElementById('octoshelf');
 const stylesheetHelper = document.createElement("style");
 const appBackground = document.getElementById('appBackground');
 const repoSection = document.getElementById('repoSection');
@@ -17,7 +18,7 @@ let centerDistance = 0;
  * Update Bubble Styles by injecting new css rules
  * @param {Element} appElement - core OctoShelf app element
  */
-function updateBubbleStyles(appElement) {
+function updateBubbleStyles() {
   let {innerHeight, innerWidth} = window;
   let modifiedHeight = innerHeight - 40;
   let bubbleModify = bubbleSize / 2;
@@ -124,7 +125,7 @@ export function updateRotations() {
  * Load initial animations and any animation specific event handlers
  * @param {Element} appElement - core OctoShelf element
  */
-export function loadAnimations(appElement) {
+export function loadAnimations() {
   document.head.appendChild(stylesheetHelper);
   lazyLoadBackground();
   updateBubbleStyles(appElement);

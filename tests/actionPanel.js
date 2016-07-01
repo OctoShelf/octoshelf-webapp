@@ -2,10 +2,11 @@
 import test from 'ava';
 
 import {registerWorker} from '../public/scripts/conductor';
+import {getWorker} from './helpers/octoTestHelpers';
 
 let hasRefreshed;
 let updateShareLink;
-let loadActionPanelListeners;
+let loadActionPanel;
 
 function resetDOMAndActionPanel() {
   let {shh} = require('../public/scripts/utilities');
@@ -53,22 +54,7 @@ function resetDOMAndActionPanel() {
   let actionPanel = require('../public/scripts/actionPanel');
   hasRefreshed = actionPanel.hasRefreshed;
   updateShareLink = actionPanel.updateShareLink;
-  loadActionPanelListeners = actionPanel.loadActionPanelListeners;
-}
-
-/**
- * Return a fake worker. We aren't testing communicating back and forth between
- * the worker and other modules, so all we really need to do is spoof a worker
- * by passing in adEventListener and postMessage functions.
- * @param {Function} addEventListener - gets called when worker is registered
- * @param {Function} postMessage - gets called when modules do a postMessage to conductor
- * @return {Object} Fake Worker
- */
-function getWorker(addEventListener, postMessage) {
-  return {
-    addEventListener,
-    postMessage
-  };
+  loadActionPanel = actionPanel.loadActionPanel;
 }
 
 test.beforeEach(resetDOMAndActionPanel);
@@ -83,14 +69,14 @@ test('startRefreshing called on load', t => {
   let worker = getWorker(addEventListener, postMessage);
 
   registerWorker(worker);
-  loadActionPanelListeners();
+  loadActionPanel();
 });
 
 test('toggling refreshRate changes', t => {
 
   return new Promise(function(resolve) {
 
-    let {refreshRateOptions} = loadActionPanelListeners();
+    let {refreshRateOptions} = loadActionPanel();
 
     let addEventListener = () => {};
     let postMessage = (result) => {
@@ -134,7 +120,7 @@ test('request notification permissions', t => {
   let worker = getWorker(addEventListener, postMessage);
 
   registerWorker(worker);
-  let {requestNotifications} = loadActionPanelListeners();
+  let {requestNotifications} = loadActionPanel();
   requestNotifications.click();
 });
 
@@ -152,7 +138,7 @@ test('toggle more info', t => {
     let worker = getWorker(addEventListener, postMessage);
 
     registerWorker(worker);
-    let {moreInfoToggle} = loadActionPanelListeners();
+    let {moreInfoToggle} = loadActionPanel();
     moreInfoToggle.click();
 
     setTimeout(() => {
@@ -170,7 +156,7 @@ test('toggleViewType', t => {
   let worker = getWorker(addEventListener, postMessage);
 
   registerWorker(worker);
-  let {appElement, toggleViewType} = loadActionPanelListeners();
+  let {appElement, toggleViewType} = loadActionPanel();
   t.is(appElement.classList.contains('octoInline'), false);
   toggleViewType.click();
   t.is(appElement.classList.contains('octoInline'), true);
@@ -184,7 +170,7 @@ test('refreshRateToggle and shareToggle', t => {
   let worker = getWorker(addEventListener, postMessage);
 
   registerWorker(worker);
-  let {refreshRateToggle, shareToggle, shareContent, refreshContent} = loadActionPanelListeners();
+  let {refreshRateToggle, shareToggle, shareContent, refreshContent} = loadActionPanel();
 
   // Both should initially be off
   t.is(shareContent.classList.contains('toggle'), false);
@@ -318,6 +304,6 @@ test('missing moreInfoToggle doesn\'t explode the app', t => {
   delete require.cache[require.resolve('../public/scripts/actionPanel')];
   let actionPanel = require('../public/scripts/actionPanel');
 
-  actionPanel.loadActionPanelListeners();
+  actionPanel.loadActionPanel();
   t.pass();
 });

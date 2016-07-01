@@ -176,13 +176,13 @@ function fetchRepo(repoUrl) {
  * @return {Promise.<T>} RepoDetails - repo details
  */
 function getRepoDetails(repository) {
-  let {id, url, fetchedDetails} = repository;
+  let {url, fetchedDetails} = repository;
   let repoUrl = url.replace(githubUrl, '');
   let repoStillOnDom = true;
 
   // If we already got the repository details, lets only fetch pull requests
   if (fetchedDetails) {
-    parsedPostMessage('toggleLoadingRepository', [id, url, true]);
+    parsedPostMessage('toggleLoadingRepository', [url, true]);
     return fetchRepoPulls(repoUrl)
       .then(prs => {
         repository.prs = prs.map(simplifyPR);
@@ -192,7 +192,7 @@ function getRepoDetails(repository) {
       })
       .then(() => {
         parsedPostMessage('updateRepository', repository);
-        parsedPostMessage('toggleLoadingRepository', [id, url, false]);
+        parsedPostMessage('toggleLoadingRepository', [url, false]);
         return repository;
       });
   }
@@ -217,7 +217,7 @@ function getRepoDetails(repository) {
     .then(() => {
       if (repoStillOnDom) {
         parsedPostMessage('updateRepository', repository);
-        parsedPostMessage('toggleLoadingRepository', [id, url, false]);
+        parsedPostMessage('toggleLoadingRepository', [url, false]);
       }
       return Promise.resolve(repository);
     });
